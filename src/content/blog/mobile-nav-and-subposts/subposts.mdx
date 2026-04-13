@@ -1,17 +1,21 @@
 ---
-title: 'Implementing file-based subpost routing'
-description: 'How file-based hierarchical content organization works under the hood'
+title: '文件式子文章路由的实现'
+description: '利用 Astro 的文件路由，把主文章与子文章自动组织成层级结构。'
 date: 2025-05-21
 tags: ['v1.6.0']
-authors: ['enscribe']
+authors: ['qingying']
 order: 2
 ---
 
 import Callout from '@/components/callout.astro'
 
-The subposts feature leverages Astro's file-based routing to automatically detect parent-child relationships without any configuration. The entire implementation hinges on a simple observation: if a post ID contains a forward slash, it's a subpost.
+子文章这件事，最让我满意的地方是它没有额外引入一套复杂配置。主文章和子文章之间的关系，直接从文件路径里推导出来就够了。
 
-```typescript title="src/lib/data-utils.ts" startLineNumber={161}
+## 关系判断其实很简单
+
+只要一篇文章的 `id` 里包含 `/`，它就不是顶层文章，而是某篇主文章下面的子文章。
+
+```typescript title="核心判断"
 export function isSubpost(postId: string): boolean {
   return postId.includes('/')
 }
@@ -21,141 +25,42 @@ export function getParentId(subpostId: string): string {
 }
 ```
 
-This is a pretty elegant solution which requires no frontmatter configuration, no manual relationship mapping, and zero migration effort for existing posts.
+这个规则的好处是足够稳定，也足够直观。你不需要额外写 `parentId`、`series` 或其他 frontmatter 字段，只要文件结构对了，层级关系就自动成立。
 
-## Navigation complexity
+## 导航逻辑需要跟着变化
 
-One of the more intricate parts of this update was rethinking navigation. The original `getAdjacentPosts(){:ts}` function assumed simple previous/next relationships. With subposts, we now have three distinct navigation contexts:
+一旦有了子文章，上一篇/下一篇就不再只是线性关系。主文章和子文章应该有不同的导航语义。
 
-<Callout variant="example">
-  Consider this structure:
-  ```
-  blog/
-    getting-started.mdx
-    react-tutorial/
-      index.mdx
-      components.mdx
-      state.mdx
-    advanced-patterns.mdx
-  ```
-
-  Navigation depends on context:
-  - From `getting-started.mdx`: next goes to `react-tutorial/index.mdx`
-  - From `react-tutorial/components.mdx`: next goes to `state.mdx`, previous to `index.mdx`
-  - From `react-tutorial/state.mdx`: previous goes to `components.mdx`, parent goes to `index.mdx`
+<Callout variant="example" title="三种导航上下文">
+  1. 读主文章时，只在主文章之间前后切换。  
+  2. 读子文章时，在同级子文章之间切换。  
+  3. 读子文章时，还要能回到它的主文章。
 </Callout>
 
-Here's how we handle this complexity:
-
-```typescript title="src/lib/data-utils.ts" startLineNumber={40}
-export async function getAdjacentPosts(currentId: string): Promise<{
-  newer: CollectionEntry<'blog'> | null
-  older: CollectionEntry<'blog'> | null
-  parent: CollectionEntry<'blog'> | null
-}> {
-  const allPosts = await getAllPosts()
-
+```typescript title="处理相邻文章"
+export async function getAdjacentPosts(currentId: string) {
   if (isSubpost(currentId)) {
     const parentId = getParentId(currentId)
-    const parent = allPosts.find((post) => post.id === parentId) || null
-
-    // Get all sibling subposts
-    const posts = await getCollection('blog')
-    const subposts = posts
-      .filter(
-        (post) =>
-          isSubpost(post.id) &&
-          getParentId(post.id) === parentId &&
-          !post.data.draft
-      )
-      .sort((a, b) => a.data.date.valueOf() - b.data.date.valueOf())
-
-    const currentIndex = subposts.findIndex((post) => post.id === currentId)
-    
-    return {
-      newer: currentIndex < subposts.length - 1 
-        ? subposts[currentIndex + 1] 
-        : null,
-      older: currentIndex > 0 
-        ? subposts[currentIndex - 1] 
-        : null,
-      parent,
-    }
+    // 在同一个父级下寻找兄弟子文章
+    // 同时保留返回主文章的能力
   }
 
-  // For parent posts, only navigate among other parent-level posts
-  const parentPosts = allPosts.filter((post) => !isSubpost(post.id))
-  const currentIndex = parentPosts.findIndex((post) => post.id === currentId)
-
-  return {
-    newer: currentIndex > 0 ? parentPosts[currentIndex - 1] : null,
-    older: currentIndex < parentPosts.length - 1 
-      ? parentPosts[currentIndex + 1] 
-      : null,
-    parent: null,
-  }
+  // 顶层文章则只和其他顶层文章比较
 }
 ```
 
-As a TL;DR, subposts should only navigate among siblings and should be able to go up to their parent, while parent posts should only navigate among other parent-level posts.
+## 列表页为什么不展示子文章
 
-## Other considerations
+我希望博客列表保持清爽，所以列表页只展示主文章。子文章应该是“进入文章之后的结构化延展”，而不是把首页和归档页塞满一串细碎条目。
 
-- The breadcrumb component required careful thought to handle three distinct cases:
+这也是子文章和“系列文章”最大的区别之一。系列通常在列表页就是多篇平级文章；子文章则更像一本书里的章节，它们服务的是主文章，而不是与主文章争夺入口。
 
-    ```astro title="src/pages/blog/[...id].astro" startLineNumber={70}
-    <Breadcrumbs
-      items={[
-        { href: '/blog', label: 'Blog', icon: 'lucide:library-big' },
-        ...(isCurrentSubpost && parentPost
-          ? [
-              {
-                href: `/blog/${parentPost.id}`,
-                label: parentPost.data.title,
-                icon: 'lucide:book-open',
-              },
-              {
-                href: `/blog/${currentPostId}`,
-                label: post.data.title,
-                icon: 'lucide:file-text',
-              },
-            ]
-          : [
-              {
-                href: `/blog/${currentPostId}`,
-                label: post.data.title,
-                icon: 'lucide:book-open-text',
-              },
-            ]),
-      ]}
-    />
-    ```
+## 这种结构适合哪些内容
 
-    We append `-text` to `book-open` or `file` (for parent posts and subposts, respectively) to indicate the active post by differentiating it from inactive icons which would lack the text within the icon.
+它特别适合下面这些类型：
 
-- The main blog listing (alongside other listings, e.g. filtering by tags, filtering by author) should exclude subposts to avoid cluttering the feed:
+- 一个主题下分多个步骤的教程。
+- 需要总览页和细分章节的项目复盘。
+- 旅行、读书或研究日志这类天然分章节的长内容。
 
-    ```typescript title="src/lib/data-utils.ts" startLineNumber={7}
-    export async function getAllPosts(): Promise<CollectionEntry<'blog'>[]> {
-    const posts = await getCollection('blog')
-    return posts
-        .filter((post) => !post.data.draft && !isSubpost(post.id))
-        .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
-    }
-    ```
-
-    Without this filter, your blog listing would show every subpost as a top-level entry, defeating the purpose of hierarchical organization.
-
-- Desktop and mobile require fundamentally different approaches for displaying the subpost hierarchy. On desktop, we have the luxury of a persistent sidebar. On mobile, screen real estate demands integration with the sticky header system. This required careful slot management in the top-level `Layout.astro`:
-
-    ```astro title="src/layouts/Layout.astro"
-    <div class="bg-background/50 sticky top-0 z-50 border-b backdrop-blur-sm">
-        <Header />
-        <slot name="subposts-navigation" />
-        <slot name="table-of-contents" />
-    </div>
-    ```
-
-    The order is semantic here since subposts navigation comes before table of contents, creating a logical hierarchy of navigation options from broad (which post/subpost) to specific (which section).
-
-- Not much testing has been done for deep nesting but my assumption is that it shouldn't work. This is intentional to maintain simplicity, since at that point you might as well use a documentation site rather than a blogging site.
+当你的文章已经出现“必须分段，但拆成独立列表又太碎”的信号时，子文章通常就是更舒服的组织方式。

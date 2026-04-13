@@ -83,7 +83,7 @@ const tocSections = await getTOCSections(currentPostId)
     <div class="col-start-2">
       <Breadcrumbs
         items={[
-          { href: '/blog', label: 'Blog', icon: 'lucide:library-big' },
+          { href: '/blog', label: '博客', icon: 'lucide:library-big' },
           ...(isCurrentSubpost && parentPost
             ? [
                 {
@@ -176,8 +176,7 @@ const tocSections = await getTOCSections(currentPostId)
                 combinedReadingTime &&
                   combinedReadingTime !== postReadingTime && (
                     <span class="text-muted-foreground">
-                      {' '}
-                      ({combinedReadingTime} total)
+                      （总计 {combinedReadingTime}）
                     </span>
                   )
               }
@@ -188,7 +187,7 @@ const tocSections = await getTOCSections(currentPostId)
             subpostCount > 0 && (
               <div class="flex w-full items-center justify-center gap-1 py-2 sm:w-fit sm:px-2 sm:py-0 first:sm:pl-0 last:sm:pr-0">
                 <Icon name="lucide:file-text" class="size-3" />
-                {subpostCount} subpost{subpostCount === 1 ? '' : 's'}
+                {subpostCount} 篇子文章
               </div>
             )
           }
@@ -250,8 +249,8 @@ const tocSections = await getTOCSections(currentPostId)
     size="icon"
     className="group fixed right-8 bottom-8 z-50 hidden"
     id="scroll-to-top"
-    title="Scroll to top"
-    aria-label="Scroll to top"
+    title="回到顶部"
+    aria-label="回到顶部"
   >
     <Icon
       name="lucide:arrow-up"

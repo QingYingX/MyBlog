@@ -126,7 +126,32 @@ const calloutConfig = {
   },
 } as const
 
-const capitalize = (str: string) => str.charAt(0).toUpperCase() + str.slice(1)
+const calloutLabels: Record<keyof typeof calloutConfig, string> = {
+  note: '说明',
+  tip: '技巧',
+  warning: '警告',
+  danger: '危险',
+  important: '重点',
+  definition: '定义',
+  theorem: '定理',
+  lemma: '引理',
+  proof: '证明',
+  corollary: '推论',
+  proposition: '命题',
+  axiom: '公理',
+  conjecture: '猜想',
+  notation: '记号',
+  remark: '注记',
+  intuition: '直觉',
+  recall: '回顾',
+  explanation: '解释',
+  example: '示例',
+  exercise: '练习',
+  problem: '问题',
+  answer: '答案',
+  solution: '解答',
+  summary: '总结',
+}
 
 const calloutVariants = cva('relative px-4 py-3 my-6 border-l-4 text-sm', {
   variants: {
@@ -166,7 +191,7 @@ const { title, variant = 'note', defaultOpen = true, ...rest } = Astro.props
       class={cn('mr-2 size-4 shrink-0', calloutConfig[variant].textColor)}
     />
     <span class={cn('font-medium mr-2', calloutConfig[variant].textColor)}>
-      {capitalize(variant)}
+      {calloutLabels[variant]}
       {title && <span class="font-normal opacity-70"> ({title})</span>}
     </span>
     <Icon

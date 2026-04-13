@@ -22,7 +22,7 @@
     "@expressive-code/plugin-line-numbers": "^0.40.2",
     "@iconify-json/lucide": "^1.2.26",
     "@shikijs/rehype": "^3.4.0",
-    "@tailwindcss/vite": "^4.0.7",
+    "@tailwindcss/vite": "4.2.1",
     "@types/react": "19.0.0",
     "@types/react-dom": "19.0.0",
     "astro": "6.0.2",
@@ -39,7 +39,7 @@
     "remark-emoji": "^5.0.1",
     "remark-math": "^6.0.0",
     "tailwind-merge": "^3.3.0",
-    "tailwindcss": "^4.1.7",
+    "tailwindcss": "4.2.1",
     "typescript": "^5.8.3"
   },
   "devDependencies": {
@@ -47,6 +47,10 @@
     "prettier-plugin-astro": "^0.14.1",
     "prettier-plugin-astro-organize-imports": "^0.4.11",
     "prettier-plugin-tailwindcss": "^0.6.11"
+  },
+  "overrides": {
+    "@vitejs/plugin-react": "5.1.4",
+    "vite": "7.3.2"
   },
   "prettier": {
     "semi": false,

@@ -16,11 +16,11 @@ const currentPath = Astro.url.pathname
 const isAuthorPage = currentPath === `/authors/${author.id}`
 
 const socialLinks: SocialLink[] = [
-  author.data.website && { href: author.data.website, label: 'Website' },
+  author.data.website && { href: author.data.website, label: '网站' },
   author.data.github && { href: author.data.github, label: 'GitHub' },
   author.data.twitter && { href: author.data.twitter, label: 'Twitter' },
   author.data.linkedin && { href: author.data.linkedin, label: 'LinkedIn' },
-  author.data.mail && { href: `mailto:${author.data.mail}`, label: 'Email' },
+  author.data.mail && { href: `mailto:${author.data.mail}`, label: '邮箱' },
 ].filter(Boolean) as SocialLink[]
 ---
 
@@ -35,7 +35,7 @@ const socialLinks: SocialLink[] = [
       <AvatarComponent
         client:load
         src={avatar}
-        alt={`Avatar of ${name}`}
+        alt={`${name} 的头像`}
         fallback={name[0]}
         className={cn(
           'size-32 rounded-md *:data-[slot="avatar-fallback"]:rounded-md',

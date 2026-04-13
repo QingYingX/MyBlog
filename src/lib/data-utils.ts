@@ -273,7 +273,7 @@ export async function getTOCSections(postId: string): Promise<TOCSection[]> {
   if (parentHeadings.length > 0) {
     sections.push({
       type: 'parent',
-      title: 'Overview',
+      title: '概览',
       headings: parentHeadings.map((heading) => ({
         slug: heading.slug,
         text: heading.text,

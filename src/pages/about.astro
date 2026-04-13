@@ -10,35 +10,35 @@ const projects = await getAllProjects()
 ---
 
 <Layout class="max-w-3xl">
-  <PageHead slot="head" title="About" />
-  <Breadcrumbs items={[{ label: 'About', icon: 'lucide:info' }]} />
+  <PageHead slot="head" title="关于" />
+  <Breadcrumbs items={[{ label: '关于', icon: 'lucide:info' }]} />
 
   <section>
     <div class="min-w-full">
       <div class="prose mb-8">
         <p class="mt-0">
-          astro-erudite is an opinionated, unstyled static blogging template
-          that prioritizes simplicity and performance, built with <Link
+          青萤博客延续了 Astro 静态博客模板轻量、直接、易维护的思路，使用 <Link
             href="https://astro.build"
             external
             underline>Astro</Link
           >, <Link href="https://tailwindcss.com" external underline
             >Tailwind</Link
-          >, and <Link href="https://ui.shadcn.com" external underline
+          > 和 <Link href="https://ui.shadcn.com" external underline
             >shadcn/ui</Link
-          >. It provides a clean foundation for your content while being
-          extremely easy to customize.
+          > 搭建。它保留了文章、作者、标签、目录、分页和深浅色模式这些常用能力，同时把默认内容改成了更适合中文站点继续使用的版本。
         </p>
         <p>
-          To learn more about the philosophy behind this template, check out the
-          following blog post: <Link
+          如果你想了解这套模板为什么仍然坚持静态内容优先，可以继续阅读：<Link
             href="/blog/the-state-of-static-blogs"
-            underline>The State of Static Blogs in 2024</Link
-          >.
+            underline>2024 年静态博客现状观察</Link
+          >。
+        </p>
+        <p>
+          下面的项目卡片仍然是示例数据，你可以随时替换成自己的作品、经历或产品页面。
         </p>
       </div>
 
-      <h2 class="mb-4 text-2xl font-medium">Example Projects Listing</h2>
+      <h2 class="mb-4 text-2xl font-medium">示例项目</h2>
       <div class="flex flex-col gap-4">
         {projects.map((project) => <ProjectCard project={project} />)}
       </div>
