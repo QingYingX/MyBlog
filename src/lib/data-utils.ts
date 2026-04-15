@@ -23,11 +23,50 @@ export async function getAllPostsAndSubposts(): Promise<
 
 export async function getAllProjects(): Promise<CollectionEntry<'projects'>[]> {
   const projects = await getCollection('projects')
-  return projects.sort((a, b) => {
-    const dateA = a.data.startDate?.getTime() || 0
-    const dateB = b.data.startDate?.getTime() || 0
-    return dateB - dateA
-  })
+  return sortProjects(projects)
+}
+
+export type ProjectFolderGroup = {
+  name: string
+  path: string
+  projects: CollectionEntry<'projects'>[]
+}
+
+export async function getProjectDirectorySections(): Promise<{
+  rootProjects: CollectionEntry<'projects'>[]
+  folderGroups: ProjectFolderGroup[]
+}> {
+  const projects = await getAllProjects()
+  const rootProjects: CollectionEntry<'projects'>[] = []
+  const folderMap = new Map<string, ProjectFolderGroup>()
+
+  for (const project of projects) {
+    const [topLevelFolder] = project.id.split('/')
+
+    if (!project.id.includes('/')) {
+      rootProjects.push(project)
+      continue
+    }
+
+    if (!folderMap.has(topLevelFolder)) {
+      folderMap.set(topLevelFolder, {
+        name: topLevelFolder,
+        path: topLevelFolder,
+        projects: [],
+      })
+    }
+
+    folderMap.get(topLevelFolder)?.projects.push(project)
+  }
+
+  const folderGroups = [...folderMap.values()]
+    .sort((a, b) => a.name.localeCompare(b.name, 'zh-CN'))
+    .map((group) => ({
+      ...group,
+      projects: sortProjects(group.projects),
+    }))
+
+  return { rootProjects, folderGroups }
 }
 
 export async function getAllTags(): Promise<Map<string, number>> {
@@ -301,4 +340,29 @@ export async function getTOCSections(postId: string): Promise<TOCSection[]> {
   }
 
   return sections
+}
+
+function sortProjects(projects: CollectionEntry<'projects'>[]) {
+  return [...projects].sort((a, b) => {
+    const primaryDiff =
+      Number(isPrimaryProject(b)) - Number(isPrimaryProject(a))
+
+    if (primaryDiff !== 0) {
+      return primaryDiff
+    }
+
+    const dateA = a.data.startDate?.getTime() || 0
+    const dateB = b.data.startDate?.getTime() || 0
+    const dateDiff = dateB - dateA
+
+    if (dateDiff !== 0) {
+      return dateDiff
+    }
+
+    return a.data.name.localeCompare(b.data.name, 'zh-CN')
+  })
+}
+
+function isPrimaryProject(project: CollectionEntry<'projects'>) {
+  return project.data.primary ?? false
 }

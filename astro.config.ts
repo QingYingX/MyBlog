@@ -20,14 +20,15 @@ import type { ExpressiveCodeTheme } from 'rehype-expressive-code'
 import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
-  site: 'https://astro-erudite.vercel.app',
+  site: 'https://blog.099311.xyz',
   integrations: [mdx(), react(), sitemap(), icon()],
   vite: {
     plugins: [tailwindcss()],
   },
   server: {
-    port: 1234,
+    port: 39393,
     host: true,
+    allowedHosts: ['blog.099311.xyz'],
   },
   devToolbar: {
     enabled: false,

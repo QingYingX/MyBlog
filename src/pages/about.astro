@@ -1,12 +1,13 @@
 ---
 import Breadcrumbs from '@/components/breadcrumbs.astro'
-import Link from '@/components/link.astro'
 import PageHead from '@/components/page-head.astro'
 import ProjectCard from '@/components/project-card.astro'
+import ProjectFolder from '@/components/project-folder.astro'
 import Layout from '@/layouts/layout.astro'
-import { getAllProjects } from '@/lib/data-utils'
+import { getProjectDirectorySections } from '@/lib/data-utils'
+import { Icon } from 'astro-icon/components'
 
-const projects = await getAllProjects()
+const { rootProjects, folderGroups } = await getProjectDirectorySections()
 ---
 
 <Layout class="max-w-3xl">
@@ -15,33 +16,206 @@ const projects = await getAllProjects()
 
   <section>
     <div class="min-w-full">
-      <div class="prose mb-8">
-        <p class="mt-0">
-          青萤博客延续了 Astro 静态博客模板轻量、直接、易维护的思路，使用 <Link
-            href="https://astro.build"
-            external
-            underline>Astro</Link
-          >, <Link href="https://tailwindcss.com" external underline
-            >Tailwind</Link
-          > 和 <Link href="https://ui.shadcn.com" external underline
-            >shadcn/ui</Link
-          > 搭建。它保留了文章、作者、标签、目录、分页和深浅色模式这些常用能力，同时把默认内容改成了更适合中文站点继续使用的版本。
-        </p>
-        <p>
-          如果你想了解这套模板为什么仍然坚持静态内容优先，可以继续阅读：<Link
-            href="/blog/the-state-of-static-blogs"
-            underline>2024 年静态博客现状观察</Link
-          >。
-        </p>
-        <p>
-          下面的项目卡片仍然是示例数据，你可以随时替换成自己的作品、经历或产品页面。
-        </p>
+      <div class="bg-muted/30 mb-8 rounded-2xl border p-6 sm:p-8">
+        <div class="flex flex-col gap-3">
+          <p
+            class="text-muted-foreground text-xs font-medium tracking-[0.24em] uppercase"
+          >
+            About Me
+          </p>
+          <h1 class="text-foreground text-3xl font-semibold sm:text-4xl">
+            你好，我是清影
+          </h1>
+          <p class="text-muted-foreground max-w-2xl text-base leading-7">
+            清影（QingYingX），一名仍在路上的学生，也是这个博客的维护者。
+          </p>
+          <p class="text-muted-foreground max-w-2xl text-base leading-7">
+            这里会记录我的学习笔记、项目实践和一些技术思考，也会留下成长过程中值得回看的片段。希望它不仅是一个展示窗口，也能成为和同路人交流、互相启发的地方。
+          </p>
+        </div>
       </div>
+      <section class="flex flex-col gap-4">
+        <div class="flex items-center gap-3">
+          <h2 class="text-2xl font-medium">Projects | 项目</h2>
+          {
+            folderGroups.length > 0 && (
+              <span class="text-muted-foreground text-sm">
+                一些我参与过的项目，按照文件夹分组展示。未分组的项目会放在下面。
+              </span>
+            )
+          }
+        </div>
 
-      <h2 class="mb-4 text-2xl font-medium">示例项目</h2>
-      <div class="flex flex-col gap-4">
-        {projects.map((project) => <ProjectCard project={project} />)}
-      </div>
+        {
+          folderGroups.length > 0 && (
+            <div class="flex flex-col gap-4" data-project-folder-accordion>
+              {folderGroups.map((group, index) => (
+                <ProjectFolder group={group} open={index === 0} />
+              ))}
+            </div>
+          )
+        }
+
+        {
+          rootProjects.length > 0 && (
+            <section class="flex flex-col gap-4">
+              {folderGroups.length > 0 && (
+                <div class="text-muted-foreground flex items-center gap-2 text-sm">
+                  <Icon name="lucide:file-stack" class="size-4" />
+                  其他项目
+                </div>
+              )}
+              <div class="flex flex-col gap-4">
+                {rootProjects.map((project) => (
+                  <ProjectCard project={project} />
+                ))}
+              </div>
+            </section>
+          )
+        }
+      </section>
     </div>
   </section>
 </Layout>
+
+<script>
+  const PROJECT_FOLDER_ANIMATION_DURATION = 220
+
+  type ProjectFolderState = {
+    animation?: Animation
+    isClosing: boolean
+    isExpanding: boolean
+    summary: HTMLElement
+    panel: HTMLElement
+  }
+
+  function getProjectFolderAnimationOptions() {
+    const prefersReducedMotion = window.matchMedia(
+      '(prefers-reduced-motion: reduce)',
+    ).matches
+
+    return {
+      duration: prefersReducedMotion ? 0 : PROJECT_FOLDER_ANIMATION_DURATION,
+      easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
+    }
+  }
+
+  function initProjectFolderAccordion() {
+    const accordion = document.querySelector('[data-project-folder-accordion]')
+
+    if (
+      !(accordion instanceof HTMLElement) ||
+      accordion.dataset.bound === 'true'
+    )
+      return
+
+    const folders = Array.from(
+      accordion.querySelectorAll('[data-project-folder]'),
+    ).filter(
+      (element): element is HTMLDetailsElement =>
+        element instanceof HTMLDetailsElement,
+    )
+
+    const folderStates = new WeakMap<HTMLDetailsElement, ProjectFolderState>()
+
+    function finishFolderAnimation(folder: HTMLDetailsElement, open: boolean) {
+      const state = folderStates.get(folder)
+      if (!state) return
+
+      state.animation = undefined
+      state.isClosing = false
+      state.isExpanding = false
+      folder.open = open
+      folder.style.height = ''
+      folder.style.overflow = ''
+    }
+
+    function animateFolder(folder: HTMLDetailsElement, open: boolean) {
+      const state = folderStates.get(folder)
+      if (!state) return
+
+      state.animation?.cancel()
+
+      const startHeight = `${folder.offsetHeight}px`
+      folder.style.height = startHeight
+      folder.style.overflow = 'hidden'
+
+      if (open) {
+        state.isExpanding = true
+        state.isClosing = false
+        folder.open = true
+      } else {
+        state.isClosing = true
+        state.isExpanding = false
+      }
+
+      requestAnimationFrame(() => {
+        const endHeight = open
+          ? `${state.summary.offsetHeight + state.panel.offsetHeight}px`
+          : `${state.summary.offsetHeight}px`
+
+        const animation = folder.animate(
+          {
+            height: [startHeight, endHeight],
+          },
+          getProjectFolderAnimationOptions(),
+        )
+
+        state.animation = animation
+
+        animation.onfinish = () => finishFolderAnimation(folder, open)
+        animation.oncancel = () => {
+          state.animation = undefined
+        }
+      })
+    }
+
+    function openFolder(folder: HTMLDetailsElement) {
+      folders.forEach((otherFolder) => {
+        const otherState = folderStates.get(otherFolder)
+        if (!otherState || otherFolder === folder) return
+        if (otherFolder.open || otherState.isExpanding) {
+          animateFolder(otherFolder, false)
+        }
+      })
+
+      animateFolder(folder, true)
+    }
+
+    folders.forEach((folder) => {
+      const summary = folder.querySelector('[data-project-folder-trigger]')
+      const panel = folder.querySelector('[data-project-folder-panel]')
+
+      if (!(summary instanceof HTMLElement) || !(panel instanceof HTMLElement))
+        return
+
+      folderStates.set(folder, {
+        isClosing: false,
+        isExpanding: false,
+        summary,
+        panel,
+      })
+
+      summary.addEventListener('click', (event) => {
+        event.preventDefault()
+
+        const state = folderStates.get(folder)
+        if (!state) return
+
+        if (folder.open && !state.isClosing) {
+          animateFolder(folder, false)
+          return
+        }
+
+        openFolder(folder)
+      })
+    })
+
+    accordion.dataset.bound = 'true'
+  }
+
+  initProjectFolderAccordion()
+
+  document.addEventListener('astro:page-load', initProjectFolderAccordion)
+  document.addEventListener('astro:after-swap', initProjectFolderAccordion)
+</script>

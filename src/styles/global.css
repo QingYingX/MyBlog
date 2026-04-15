@@ -31,7 +31,7 @@
   src: url('/fonts/GeistVF.woff2') format('woff2-variations');
   font-weight: 100 900;
   font-style: normal;
-  font-display: swap;
+  font-display: optional;
 }
 
 @font-face {
@@ -39,7 +39,7 @@
   src: url('/fonts/GeistMonoVF.woff2') format('woff2-variations');
   font-weight: 100 900;
   font-style: normal;
-  font-display: swap;
+  font-display: optional;
 }
 
 :root {
@@ -52,6 +52,13 @@
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
+  --scrollbar-thumb: color-mix(in oklab, var(--muted-foreground) 45%, transparent);
+  --scrollbar-thumb-hover: color-mix(
+    in oklab,
+    var(--muted-foreground) 60%,
+    transparent
+  );
+  --scrollbar-track: color-mix(in oklab, var(--muted) 80%, transparent);
 }
 
 [data-theme='dark'] {
@@ -64,9 +71,45 @@
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --ring: oklch(0.556 0 0);
+  --scrollbar-thumb: color-mix(in oklab, var(--muted-foreground) 38%, transparent);
+  --scrollbar-thumb-hover: color-mix(
+    in oklab,
+    var(--muted-foreground) 52%,
+    transparent
+  );
+  --scrollbar-track: color-mix(in oklab, var(--muted) 58%, transparent);
 }
 
 @layer base {
+  html {
+    overflow-y: scroll;
+    scrollbar-gutter: stable;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+  }
+
+  *::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border: 2px solid var(--scrollbar-track);
+    border-radius: 999px;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-thumb-hover);
+  }
+
   *,
   ::after,
   ::before,

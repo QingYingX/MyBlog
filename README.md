@@ -1,297 +1,247 @@
-![Showcase Card](/public/static/twitter-card.png)
+![项目封面](public/static/twitter-card.png)
 
-<div align="center">
+# 清影博客
 
-## astro-erudite
+一个基于 [Astro](https://astro.build/) 构建的中文静态博客项目，适合整理文章、笔记、教程和项目记录。项目基于 `astro-erudite` 演化而来，已经完成了中文化和站点信息定制，同时保留了较完整的博客能力。
 
-![Stargazers]
-[![License]](LICENSE)
+| 预览 1 | 预览 2 |
+| --- | --- |
+| ![预览 1](public/static/preview-1.png) | ![预览 2](public/static/preview-2.png) |
+| ![预览 3](public/static/preview-3.png) | ![预览 4](public/static/preview-4.png) |
 
-</div>
+## 功能特性
 
-astro-erudite is an opinionated, unstyled static blogging template built with [Astro](https://astro.build/), [Tailwind](https://tailwindcss.com/), and [shadcn/ui](https://ui.shadcn.com/). Extraordinarily loosely based off the [Astro Micro](https://astro-micro.vercel.app/) theme by [trevortylerlee](https://github.com/trevortylerlee).
+- 使用 Astro 静态生成，页面轻量、加载快、部署简单。
+- 支持 MDX 写作，可在文章中直接使用 Astro 组件。
+- 内置目录、标签页、作者页、分页、RSS 和 Sitemap。
+- 支持子文章结构，适合拆分长文或系列内容。
+- 集成 Expressive Code、Shiki 和 KaTeX，适合技术写作。
+- 自带深浅色主题切换和 Astro View Transitions 页面过渡。
+- 基于 Tailwind CSS 4 和一组轻量 UI 组件，方便继续定制。
 
-| ![Preview 1](/public/static/preview-1.png) | ![Preview 2](/public/static/preview-2.png) |
-| ------------------------------------------ | ------------------------------------------ |
-| ![Preview 3](/public/static/preview-3.png) | ![Preview 4](/public/static/preview-4.png) |
+## 技术栈
 
-> [!NOTE]
-> To learn more about why this template exists, read [The State of Static Blogs in 2024](https://astro-erudite.vercel.app/blog/the-state-of-static-blogs), where I share my take on what constitutes a great blogging template and my goals while developing this one.
+| 分类 | 技术 |
+| --- | --- |
+| 框架 | Astro 6 |
+| 样式 | Tailwind CSS 4 |
+| 组件 | Astro 组件 + 少量 React 组件 |
+| 内容 | Markdown / MDX |
+| 代码高亮 | Expressive Code、Shiki |
+| 数学公式 | KaTeX |
+| 图标 | astro-icon、Lucide |
+| 类型检查 | TypeScript、`astro check` |
 
----
+## 快速开始
 
-## Community examples
+### 1. 安装依赖
 
-Below are some fantastic examples of websites based on this template. If you wish to add your site to this list, open a [pull request](https://github.com/jktrn/astro-erudite/pulls)!
-
-| Site | Author | Tags | Source |
-|-|-|-|-|
-| [enscribe.dev](https://enscribe.dev) | [@jktrn](https://github.com/jktrn) | portfolio, interactive | [→](https://github.com/jktrn/enscribe.dev) |
-| [emile.sh](https://emile.sh) | [@echoghi](https://github.com/echoghi) | minimal, flexoki | [→](https://github.com/echoghi/v5) |
-| [decentparadox.me](https://decentparadox.me) | [@decentparadox](https://github.com/decentparadox) | portfolio, sci-fi | [→](https://github.com/decentparadox/decentparadox.me) |
-| [flocto.github.io](https://flocto.github.io/) | [@flocto](https://github.com/flocto) | blog | [→](https://github.com/flocto/flocto.github.io) |
-| [dumbprism.me](https://www.dumbprism.me/) | [@dumbprism](https://github.com/dumbprism) | portfolio, bento | [→](https://github.com/dumbprism/dumbprism-portfolio) |
-| [hyuki.dev](https://hyuki.dev/) | [@snow0406](https://github.com/snow0406) | minimal, blog | [→](https://github.com/Snow0406/hyuki.dev) |
-| [ldd.cc](https://ldd.cc/) | [@xJoyLu](https://github.com/xjoylu) | blog | [→](https://ldd.cc/) |
-| [rezarezvan.com](https://rezarezvan.com/) | [@rezaarezvan](https://github.com/rezaarezvan) | academic, blog | [→](https://rezarezvan.com/) |
-| [blog.z0x.ca](https://blog.z0x.ca/) | [@z0x](https://z0x.ca) | minimal | [→](https://git.z0x.ca/z0x/blog.z0x.ca/) |
-| [angelaytchan.net](https://angelaytchan.net/) | [@wispyplant](https://github.com/wispyplant) | portfolio, art | [→](https://github.com/wispyplant/wispyplant.github.io) |
-| [kaezr.xyz](https://kaezr.xyz/) | [@kaezrr](https://github.com/kaezrr) | minimal, portfolio | [→](https://github.com/kaezrr/webfolio) |
-| [worldwidewong](https://worldwidewong.vercel.app) | [@brendanwong-web](https://github.com/brendanwong-web) | portfolio, gallery | [→](https://github.com/brendanwong-web/worldwidewong) |
-| [bgajjala.dev](https://bgajjala.dev) | [@bgajjala8](https://github.com/bgajjala8) | minimal, blog | [→](https://github.com/bgajjala8/bgajjala.dev) |
-| [ankitz007.vercel.app](https://ankitz007.vercel.app) | [@ankitz007](https://github.com/ankitz007) | blog | [→](https://github.com/ankitz007/webfolio) |
-| [sadman.ca](https://sadman.ca) | [@sadmanca](https://github.com/sadmanca) | blog, media | [→](https://github.com/sadmanca/blogv3) |
-| [marcel-to.vercel.app](https://marcel-to.vercel.app) | [@Marcel-TO](https://github.com/Marcel-TO) | portfolio, docs | [→](https://github.com/Marcel-TO/marcel-to-website) |
-| [merox.dev](https://merox.dev) | [@meroxdotdev](https://github.com/meroxdotdev) | blog, devops, homelab | [→](https://github.com/meroxdotdev/merox) |
-| [Off by One](https://justoffbyone.com) | [@cduruk](https://github.com/cduruk) | engineering, blog | [→](https://github.com/cduruk/offbyone) |
-| [holywater.dev](https://holywater.dev) | [@holywater2372](https://github.com/holywater2372) | cybersecurity, blog | [→](https://github.com/holywater2372/holywater.dev) |
-| [theinfinull.com](https://theinfinull.com) | [@theinfinull](https://github.com/theinfinull) | dev, portfolio, blog | [→](https://github.com/theinfinull/portfolio) |
-| [chai-pin-zheng.xyz](https://www.chai-pin-zheng.xyz/) | [@Ducksss](https://github.com/Ducksss) | portfolio, interactive, blog, ascii | [→](https://github.com/Ducksss/ascii-astro-erudite) |
-
-## Features
-
-- [Astro](https://astro.build/)'s [Islands](https://docs.astro.build/en/concepts/islands/) architecture for selective hydration and client-side interactivity while maintaining fast static site rendering.
-- [shadcn/ui](https://ui.shadcn.com/) with [Tailwind](https://tailwindcss.com/) color conventions for automatic light and dark theme styling. Features accessible, theme-aware UI components for navigation, buttons, and more.
-- [Expressive Code](https://expressive-code.com/) for enhanced code block styling, syntax highlighting, and code block titles.
-- Blog authoring with [MDX](https://mdxjs.com/) for component-rich content and $\LaTeX$ math rendering via [KaTeX](https://katex.org/).
-- Astro [View Transitions](https://docs.astro.build/en/guides/view-transitions/) in <abbr title="Single Page Application">SPA</abbr> mode for smooth route animations.
-- SEO optimization with granular metadata and [Open Graph](https://ogp.me/) tag control for each post.
-- [RSS](https://en.wikipedia.org/wiki/RSS) feed and sitemap generation.
-- Subpost support for breaking long content into digestible parts and organizing related series.
-- Author profiles with a dedicated authors page and multi-author post support.
-- Project tags with a dedicated tags page for post categorization and discovery.
-- Custom Callout component variants for enhanced technical writing.
-
-### Technology stack
-
-This is a list of the various technologies used to build this template:
-
-| Category   | Technology Name                                                                            |
-| ---------- | ------------------------------------------------------------------------------------------ |
-| Framework  | [Astro](https://astro.build/)                                                              |
-| Styling    | [Tailwind](https://tailwindcss.com)                                                        |
-| Components | [shadcn/ui](https://ui.shadcn.com/)                                                        |
-| Content    | [MDX](https://mdxjs.com/)                                                                  |
-| Codeblocks | [Expressive Code](https://expressive-code.com/), [Shiki](https://github.com/shikijs/shiki) |
-| Graphics   | [Figma](https://www.figma.com/)                                                            |
-| Deployment | [Vercel](https://vercel.com)                                                               |
-
-## Getting started
-
-1. Hit &ldquo;Use this template&rdquo;, the big green button on the top right, to create a new repository in your own GitHub account with this template.
-
-2. Clone the repository:
-
-   ```bash
-   git clone https://github.com/[YOUR_USERNAME]/[YOUR_REPO_NAME].git
-   cd [YOUR_REPO_NAME]
-   ```
-
-3. Install dependencies:
-
-   ```bash
-   npm install
-   ```
-
-4. Start the development server:
-
-   ```bash
-   npm run dev
-   ```
-
-5. Open your browser and visit `http://localhost:1234` to get started. The following commands are also available:
-
-   | Command            | Description                                                     |
-   | ------------------ | --------------------------------------------------------------- |
-   | `npm run start`    | Alias for `npm run dev`                                         |
-   | `npm run build`    | Run type checking and build the project                         |
-   | `npm run preview`  | Previews the built project                                      |
-   | `npm run astro`    | Run Astro CLI commands                                          |
-   | `npm run prettier` | Blanket format all files using [Prettier](https://prettier.io/) |
-
-### Site configuration
-
-Edit the `src/consts.ts` file to update your site's metadata, navigation links, and social links:
-
-```ts
-export const SITE: Site = {
-  title: 'astro-erudite',
-  description: // ...
-  href: 'https://astro-erudite.vercel.app',
-  featuredPostCount: 2,
-  postsPerPage: 3,
-}
-
-export const NAV_LINKS: SocialLink[] = [
-  {
-    href: '/blog',
-    label: 'blog',
-  },
-  // ...
-]
-
-export const SOCIAL_LINKS: SocialLink[] = [
-  {
-    href: 'https://github.com/jktrn',
-    label: 'GitHub',
-  },
-  // ...
-]
+```bash
+npm install
 ```
 
-### Color palette
+### 2. 启动开发服务器
 
-Colors are defined in `src/styles/global.css` in [OKLCH format](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value/oklch), using the [shadcn/ui](https://ui.shadcn.com/) convention:
-
-```css
-:root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-}
-
-[data-theme='dark'] {
-  /* ... */
-}
+```bash
+npm run dev
 ```
 
-### Favicons
+默认地址为 `http://localhost:1234`。
 
-Favicons are generated using [RealFaviconGenerator](https://realfavicongenerator.net/). To adjust the favicons, replace the files in the `public/` directory (such as `favicon.ico`, `favicon.svg`, `apple-touch-icon.png`, etc.) with your own. After updating the favicon files, you'll also need to adjust the references in `src/components/Favicons.astro` to match your new favicon filenames and paths:
+### 3. 构建生产版本
 
-```html
-<!-- Replace these with the generated meta tags -->
-<link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
-<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-<link rel="shortcut icon" href="/favicon.ico" />
-<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-<meta name="apple-mobile-web-app-title" content="astro-erudite" />
-<link rel="manifest" href="/site.webmanifest" />
+```bash
+npm run build
 ```
 
-## Adding content
+### 4. 本地预览构建结果
 
-### Blog posts
+```bash
+npm run preview
+```
 
-Add new blog posts as MDX files in the `src/content/blog/` directory. Use the following frontmatter structure:
+## 常用命令
+
+| 命令 | 说明 |
+| --- | --- |
+| `npm run dev` | 启动本地开发服务器 |
+| `npm run start` | `dev` 的别名 |
+| `npm run build` | 先做类型检查，再构建静态站点 |
+| `npm run preview` | 预览构建后的站点 |
+| `npm run astro` | 执行 Astro CLI |
+| `npm run prettier` | 格式化 `ts`、`tsx`、`css`、`astro` 文件 |
+
+## 目录结构
+
+```text
+.
+├─ public/                  # favicon、字体和静态资源
+├─ src/
+│  ├─ components/           # 页面组件与 UI 组件
+│  ├─ content/
+│  │  ├─ authors/           # 作者资料
+│  │  ├─ blog/              # 博客文章与子文章
+│  │  └─ projects/          # 项目卡片内容
+│  ├─ layouts/              # 页面布局
+│  ├─ lib/                  # 数据处理与工具函数
+│  ├─ pages/                # 路由页面
+│  ├─ styles/               # 全局样式与排版样式
+│  ├─ consts.ts             # 站点信息、导航和社交链接
+│  └─ content.config.ts     # 内容集合 schema
+├─ astro.config.ts          # Astro 配置
+├─ tsconfig.json            # TypeScript 配置
+└─ package.json             # 脚本与依赖
+```
+
+## 内容管理
+
+### 写文章
+
+在 `src/content/blog/` 下新增 `md` 或 `mdx` 文件即可。推荐使用单独目录存放文章正文与配图，例如：
+
+```text
+src/content/blog/my-first-post/
+├─ index.mdx
+└─ banner.png
+```
+
+文章 frontmatter 示例：
 
 ```yml
 ---
-title: 'Your Post Title'
-description: 'A brief description of your post!'
-date: 2024-01-01
-tags: ['tag1', 'tag2']
-image: './image.png'
-authors: ['author1', 'author2']
+title: '我的第一篇文章'
+description: '这里是一段文章摘要。'
+date: 2026-04-13
+tags: ['astro', 'blog']
+image: './banner.png'
+authors: ['qingying']
 draft: false
 ---
 ```
 
-The blog post schema is defined as follows:
+当前博客内容 schema 支持以下字段：
 
-| Field         | Type (Zod)      | Requirements                                                                                                                                                                    | Required |
-| ------------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
-| `title`       | `string`        | Should be ≤60 characters.                                                                                                                                                       | Yes      |
-| `description` | `string`        | Should be ≤155 characters.                                                                                                                                                      | Yes      |
-| `date`        | `coerce.date()` | Must be in `YYYY-MM-DD` format.                                                                                                                                                 | Yes      |
-| `order`       | `number`        | Sort order for subposts with the same `date`. Defaults to `0` if not provided.                                                                                                  | Optional |
-| `image`       | `image()`       | Should be exactly 1200px &times; 630px.                                                                                                                                         | Optional |
-| `tags`        | `string[]`      | Preferably use kebab-case for these.                                                                                                                                            | Optional |
-| `authors`     | `string[]`      | If the author has a profile, use the id associated with their Markdown file in `src/content/authors/` (e.g. if their file is named `jane-doe.md`, use `jane-doe` in the array). | Optional |
-| `draft`       | `boolean`       | Defaults to `false` if not provided.                                                                                                                                            | Optional |
+| 字段 | 类型 | 是否必填 | 说明 |
+| --- | --- | --- | --- |
+| `title` | `string` | 是 | 文章标题 |
+| `description` | `string` | 是 | 文章摘要 |
+| `date` | `date` | 是 | 发布日期 |
+| `order` | `number` | 否 | 同一天的子文章排序 |
+| `image` | `image` | 否 | 文章封面 |
+| `tags` | `string[]` | 否 | 标签列表 |
+| `authors` | `string[]` | 否 | 作者 id 列表 |
+| `draft` | `boolean` | 否 | 是否草稿 |
 
-### Authors
+### 子文章
 
-Add author information in `src/content/authors/` as Markdown files. A file named `[author-name].md` can be associated with a blog post if `"author-name"` (the id) is added to the `authors` field:
+这个项目支持通过文件结构组织系列文章。只要某篇文章的 `id` 中包含 `/`，它就会被识别为子文章。
+
+例如：
+
+```text
+src/content/blog/series-name/
+├─ index.mdx
+├─ part-1.mdx
+└─ part-2.mdx
+```
+
+其中：
+
+- `index.mdx` 是主文章。
+- `part-1.mdx` 和 `part-2.mdx` 会作为子文章参与目录和导航。
+- 不需要额外写 `parentId` 或系列字段，关系由文件路径自动推导。
+
+### 作者
+
+作者资料放在 `src/content/authors/` 下，一个文件对应一个作者。
 
 ```yml
 ---
-name: 'enscribe'
-pronouns: 'he/him'
-avatar: 'https://gravatar.com/avatar/9bfdc4ec972793cf05cb91efce5f4aaaec2a0da1bf4ec34dad0913f1d845faf6.webp?size=256'
-bio: 'd(-_-)b'
-website: 'https://enscribe.dev'
-twitter: 'https://twitter.com/enscry'
-github: 'https://github.com/jktrn'
-mail: 'jason@enscribe.dev'
+name: '清影'
+avatar: 'https://example.com/avatar.png'
+bio: '这里是一段作者简介。'
+website: 'https://example.com'
+github: 'https://github.com/your-name'
+mail: 'hello@example.com'
 ---
 ```
 
-The author schema is defined as follows:
+如果文章 frontmatter 中的 `authors` 写了对应文件名，文章页就会自动展示作者信息并链接到作者页。
 
-| Field      | Type (Zod)                                 | Requirements                                                                                                                                                             | Required |
-| ---------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------- |
-| `name`     | `string`                                   | n/a                                                                                                                                                                      | Yes      |
-| `pronouns` | `string`                                   | n/a                                                                                                                                                                      | Optional |
-| `avatar`   | `string.url()` or `string.startsWith('/')` | Should be either a valid URL or a path starting with `/`. Preferably use [Gravatar](https://en.gravatar.com/site/implement/images/) with the `?size=256` size parameter. | Yes      |
-| `bio`      | `string`                                   | n/a                                                                                                                                                                      | Optional |
-| `mail`     | `string.email()`                           | Must be a valid email address.                                                                                                                                           | Optional |
-| `website`  | `string.url()`                             | Must be a valid URL.                                                                                                                                                     | Optional |
-| `twitter`  | `string.url()`                             | Must be a valid URL.                                                                                                                                                     | Optional |
-| `github`   | `string.url()`                             | Must be a valid URL.                                                                                                                                                     | Optional |
-| `linkedin` | `string.url()`                             | Must be a valid URL.                                                                                                                                                     | Optional |
-| `discord`  | `string.url()`                             | Must be a valid URL.                                                                                                                                                     | Optional |
+### 项目
 
-> [!TIP]
-> You can add as many social media links as you want, as long as you adjust the schema! Make sure you also support the new field in the `src/components/SocialIcons.astro` component.
-
-### Projects
-
-Add projects in `src/content/projects/` as Markdown files:
+项目卡片数据放在 `src/content/projects/` 下，适合在“关于”页面展示作品、案例或长期维护中的项目。
 
 ```yml
 ---
-name: 'Project A'
-description: 'This is an example project description! You should replace this with a description of your own project.'
-tags: ['Framework A', 'Library B', 'Tool C', 'Resource D']
-image: '/static/1200x630.png'
+name: '个人项目 A'
+description: '一句话介绍你的项目。'
+tags: ['Astro', '博客', '前端']
+image: '../../../public/static/1200x630.png'
 link: 'https://example.com'
-startDate: '2024-01-01'
-endDate: '2024-01-01'
+startDate: '2026-01-01'
+endDate: '2026-03-01'
 ---
 ```
 
-The project schema is defined as follows:
+`endDate` 除了填写普通日期外，也支持特殊值：
 
-| Field         | Type (Zod)      | Requirements                            | Required |
-| ------------- | --------------- | --------------------------------------- | -------- |
-| `name`        | `string`        | n/a                                     | Yes      |
-| `description` | `string`        | n/a                                     | Yes      |
-| `tags`        | `string[]`      | n/a                                     | Yes      |
-| `image`       | `image()`       | Should be exactly 1200px &times; 630px. | Yes      |
-| `link`        | `string.url()`  | Must be a valid URL.                    | Yes      |
-| `startDate`   | `coerce.date()` | Must be in `YYYY-MM-DD` format.         | Optional |
-| `endDate`     | `coerce.date()` | Must be in `YYYY-MM-DD` format.         | Optional |
+- `endDate: 'present'`
+
+这个写法会在构建时自动显示为当天日期。
+
+项目内容也支持按顶层文件夹分组展示。例如：
+
+```text
+src/content/projects/
+├─ bots/
+│  ├─ xiaomigao.md
+│  └─ helper.md
+├─ tools/
+│  └─ cli.md
+└─ project-a.md
+```
+
+在“关于”页面中：
+
+- `bots/` 和 `tools/` 会显示为可展开的文件夹分组。
+- `project-a.md` 这种直接放在根目录的项目会显示在“未分组项目”里。
+
+如果你希望某个目录里的某个项目固定显示在最上面，可以在 frontmatter 里增加：
+
+- `primary: true`
+
+同一目录下被标记为主项目的条目会优先展示，然后再按开始时间倒序排序。
+
+## 站点配置
+
+以下文件是接手这个项目后最常改的几个地方：
+
+- `src/consts.ts`：站点标题、描述、导航、社交链接、分页数量。
+- `astro.config.ts`：Astro 插件、开发端口、Markdown 处理、站点域名。
+- `src/styles/global.css`：主题色、字体变量和基础样式。
+- `src/styles/typography.css`：文章排版样式。
+- `src/pages/index.astro`：首页文案与首页结构。
+- `src/pages/about.astro`：关于页内容与项目展示区。
+
+## 部署提醒
+
+如果你要把这个项目改成自己的正式站点，至少同步检查下面两处：
+
+- `src/consts.ts` 中的 `SITE.href`
+- `astro.config.ts` 中的 `site`
+
+修改站点域名时，这两处最好保持一致，否则 RSS、Sitemap、canonical URL 和社交分享元信息可能会指向错误地址。
+
+如果你准备部署到带子路径的站点，例如 `https://username.github.io/repo-name/` 这种 GitHub Pages 项目页，还需要额外检查 Astro 的 `base` 配置以及站内绝对路径资源是否匹配。
+
+## 适合继续改造的方向
+
+- 替换 `src/content/` 下的示例文章、作者和项目内容。
+- 调整首页和关于页文案，让它更贴近你的用途。
+- 更换 favicon、logo、封面图和字体。
+- 增加新的社交字段、栏目页或自定义内容组件。
 
 ## License
 
-This project is open source and available under the [MIT License](LICENSE).
-
----
-
-### Star history
-
-<a href="https://star-history.com/#jktrn/astro-erudite&Date">
- <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=jktrn/astro-erudite&type=Date&theme=dark" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=jktrn/astro-erudite&type=Date" />
-   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=jktrn/astro-erudite&type=Date" />
- </picture>
-</a>
-
----
-
-Built with &hearts; by [enscribe](https://enscribe.dev)!
-
-[Stargazers]: https://img.shields.io/github/stars/jktrn/astro-erudite?color=fafafa&logo=github&logoColor=fff&style=for-the-badge
-[License]: https://img.shields.io/github/license/jktrn/astro-erudite?color=0a0a0a&logo=github&logoColor=fff&style=for-the-badge
+本项目使用 [MIT License](LICENSE)。

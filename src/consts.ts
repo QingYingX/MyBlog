@@ -1,11 +1,11 @@
 import type { IconMap, SocialLink, Site } from '@/types'
 
 export const SITE: Site = {
-  title: '青萤博客',
+  title: '清影博客',
   description:
-    '一个基于 Astro 构建的中文静态博客模板，内置作者、标签、目录与深浅色主题。',
-  href: 'https://qingyingx.github.io/MyBlog',
-  author: '青萤',
+    'Hi~ 这里是清影的个人博客，记录一些技术文章和生活点滴。希望能在这里与大家分享我的知识和经验，也欢迎大家留言交流！',
+  href: 'https://blog.099311.xyz',
+  author: '清影',
   locale: 'zh-CN',
   featuredPostCount: 2,
   postsPerPage: 3,
@@ -17,7 +17,7 @@ export const NAV_LINKS: SocialLink[] = [
     label: '博客',
   },
   {
-    href: '/authors',
+    href: '/authors/qingying',
     label: '作者',
   },
   {

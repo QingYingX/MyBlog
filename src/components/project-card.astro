@@ -11,6 +11,13 @@ interface Props {
 }
 
 const { project } = Astro.props
+const displayEndDate = project.data.endDate
+  ? project.data.endDate instanceof Date
+    ? formatDate(project.data.endDate)
+    : project.data.endDate === 'present'
+      ? formatDate(new Date())
+      : '至今'
+  : '至今'
 ---
 
 <div
@@ -23,13 +30,15 @@ const { project } = Astro.props
   >
     {
       project.data.image && (
-        <div class="w-full sm:max-w-3xs sm:shrink-0">
+        <div
+          class="bg-muted/30 overflow-hidden rounded-lg w-full aspect-[2/1] sm:h-32 sm:w-64 sm:shrink-0"
+        >
           <Image
             src={project.data.image}
             alt={project.data.name}
-            width={1200}
-            height={630}
-            class="object-cover"
+            width={256}
+            height={128}
+            class="h-full w-full object-cover"
           />
         </div>
       )
@@ -48,9 +57,7 @@ const { project } = Astro.props
               <Icon name="lucide:calendar" class="size-3" />
               <span>
                 {formatDate(project.data.startDate)}
-                {project.data.endDate
-                  ? ` → ${formatDate(project.data.endDate)}`
-                  : ' → 至今'}
+                {` → ${displayEndDate}`}
               </span>
             </span>
           </p>

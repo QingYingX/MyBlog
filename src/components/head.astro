@@ -1,7 +1,10 @@
 ---
 import { SITE } from '@/consts'
+import { resolveSiteUrl } from '@/lib/site'
 import { ClientRouter } from 'astro:transitions'
 import Favicons from './favicons.astro'
+
+const rssUrl = resolveSiteUrl('/rss.xml', { site: Astro.site, url: Astro.url })
 ---
 
 <head>
@@ -36,10 +39,24 @@ import Favicons from './favicons.astro'
   <link rel="sitemap" href="/sitemap-index.xml" />
   <link rel="manifest" href="/site.webmanifest" />
   <link
+    rel="preload"
+    href="/fonts/GeistVF.woff2"
+    as="font"
+    type="font/woff2"
+    crossorigin
+  />
+  <link
+    rel="preload"
+    href="/fonts/GeistMonoVF.woff2"
+    as="font"
+    type="font/woff2"
+    crossorigin
+  />
+  <link
     rel="alternate"
     type="application/rss+xml"
     title={SITE.title}
-    href={new URL('rss.xml', Astro.site)}
+    href={rssUrl}
   />
 
   <Favicons />

@@ -1,0 +1,9 @@
+services:
+  myblog:
+    container_name: MyBlog
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - '39393:39393'
+    restart: unless-stopped

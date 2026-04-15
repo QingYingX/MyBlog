@@ -43,7 +43,8 @@ const projects = defineCollection({
       image: image(),
       link: z.url(),
       startDate: z.coerce.date().optional(),
-      endDate: z.coerce.date().optional(),
+      endDate: z.union([z.coerce.date(), z.literal('present')]).optional(),
+      primary: z.boolean().optional(),
     }),
 })
 

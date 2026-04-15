@@ -1,6 +1,7 @@
 ---
 import { SITE } from '@/consts'
 import { isSubpost, parseAuthors } from '@/lib/data-utils'
+import { resolveSiteUrl } from '@/lib/site'
 import type { CollectionEntry } from 'astro:content'
 
 interface Props {
@@ -11,7 +12,8 @@ const { post } = Astro.props
 
 const title = post.data.title || SITE.title
 const description = post.data.description || SITE.description
-const image = new URL('/static/1200x630.png', Astro.site)
+const site = { site: Astro.site, url: Astro.url }
+const image = resolveSiteUrl('/static/1200x630.png', site)
 const resolvedAuthors = await parseAuthors(post.data.authors ?? [])
 const author =
   resolvedAuthors.length > 0
@@ -31,7 +33,7 @@ const author =
 <meta
   property="og:image"
   content={post?.data?.image?.src
-    ? `${SITE.href}${post.data.image.src}`
+    ? resolveSiteUrl(post.data.image.src, site)
     : image}
 />
 <meta property="og:image:alt" content={title} />
@@ -46,7 +48,7 @@ const author =
 <meta
   property="twitter:image"
   content={post?.data?.image?.src
-    ? `${SITE.href}${post.data.image.src}`
+    ? resolveSiteUrl(post.data.image.src, site)
     : image}
 />
 <meta name="twitter:image:alt" content={title} />

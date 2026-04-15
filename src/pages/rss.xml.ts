@@ -1,16 +1,18 @@
 import { SITE } from '@/consts'
 import rss from '@astrojs/rss'
+import { getSiteOrigin } from '@/lib/site'
 import type { APIContext } from 'astro'
 import { getAllPosts } from '@/lib/data-utils'
 
 export async function GET(context: APIContext) {
   try {
     const posts = await getAllPosts()
+    const site = getSiteOrigin({ site: context.site, url: context.url })
 
     return rss({
       title: SITE.title,
       description: SITE.description,
-      site: context.site ?? SITE.href,
+      site,
       items: posts.map((post) => ({
         title: post.data.title,
         description: post.data.description,
