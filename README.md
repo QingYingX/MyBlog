@@ -1,6 +1,6 @@
 ![项目封面](public/static/twitter-card.png)
 
-# 清影博客
+# QingYingX's Blog
 
 一个基于 [Astro](https://astro.build/) 构建的中文静态博客项目，适合整理文章、笔记、教程和项目记录。项目基于 `astro-erudite` 演化而来，已经完成了中文化和站点信息定制，同时保留了较完整的博客能力。
 
@@ -34,6 +34,12 @@
 
 ## 快速开始
 
+### 环境要求
+
+- Node.js 22 或更高版本，Docker 镜像使用的是 `node:22-alpine`。
+- npm，项目当前使用 `package-lock.json` 锁定依赖版本。
+- Docker 与 Docker Compose 可选，仅在容器化运行时需要。
+
 ### 1. 安装依赖
 
 ```bash
@@ -46,7 +52,7 @@ npm install
 npm run dev
 ```
 
-默认地址为 `http://localhost:1234`。
+默认地址为 `http://localhost:39393`。开发端口由 `astro.config.ts` 中的 `server.port` 统一配置。
 
 ### 3. 构建生产版本
 
@@ -60,14 +66,52 @@ npm run build
 npm run preview
 ```
 
+## Docker 运行
+
+项目已经内置 `Dockerfile` 和 `docker-compose.yml`，容器会监听 `39393` 端口。
+
+### 使用 Docker Compose
+
+```bash
+docker compose up -d --build
+```
+
+启动后访问：
+
+```text
+http://localhost:39393
+```
+
+查看日志：
+
+```bash
+docker compose logs -f myblog
+```
+
+停止并移除容器：
+
+```bash
+docker compose down
+```
+
+### 使用 Docker 命令
+
+```bash
+docker build -t myblog .
+docker run -d --name MyBlog -p 39393:39393 --restart unless-stopped myblog
+```
+
+当前镜像启动命令为 `npm run serve`，会先执行 `npm run build`，再通过 `npm run start` 启动 Astro 预览服务。如果修改了源码、内容或配置，请重新构建镜像后再启动容器。
+
 ## 常用命令
 
 | 命令 | 说明 |
 | --- | --- |
-| `npm run dev` | 启动本地开发服务器 |
-| `npm run start` | `dev` 的别名 |
+| `npm run dev` | 启动本地开发服务器，默认访问 `http://localhost:39393` |
 | `npm run build` | 先做类型检查，再构建静态站点 |
-| `npm run preview` | 预览构建后的站点 |
+| `npm run preview` | 本地预览构建后的站点 |
+| `npm run start` | 以 `0.0.0.0` 监听方式启动 Astro 预览服务，适合容器环境 |
+| `npm run serve` | 先构建再启动预览服务，Docker 默认执行这个命令 |
 | `npm run astro` | 执行 Astro CLI |
 | `npm run prettier` | 格式化 `ts`、`tsx`、`css`、`astro` 文件 |
 
@@ -89,6 +133,8 @@ npm run preview
 │  ├─ consts.ts             # 站点信息、导航和社交链接
 │  └─ content.config.ts     # 内容集合 schema
 ├─ astro.config.ts          # Astro 配置
+├─ Dockerfile               # Docker 镜像构建配置
+├─ docker-compose.yml       # Docker Compose 运行配置
 ├─ tsconfig.json            # TypeScript 配置
 └─ package.json             # 脚本与依赖
 ```
@@ -232,6 +278,12 @@ src/content/projects/
 - `astro.config.ts` 中的 `site`
 
 修改站点域名时，这两处最好保持一致，否则 RSS、Sitemap、canonical URL 和社交分享元信息可能会指向错误地址。
+
+当前项目统一使用 `39393` 端口。如果你需要调整端口，请同时检查：
+
+- `astro.config.ts` 中的 `server.port`
+- `Dockerfile` 中的 `EXPOSE`
+- `docker-compose.yml` 中的 `ports`
 
 如果你准备部署到带子路径的站点，例如 `https://username.github.io/repo-name/` 这种 GitHub Pages 项目页，还需要额外检查 Astro 的 `base` 配置以及站内绝对路径资源是否匹配。
 

@@ -1,7 +1,7 @@
 import type { IconMap, SocialLink, Site } from '@/types'
 
 export const SITE: Site = {
-  title: '清影博客',
+  title: 'QingYingX\'s Blog',
   description:
     'Hi~ 这里是清影的个人博客，记录一些技术文章和生活点滴。希望能在这里与大家分享我的知识和经验，也欢迎大家留言交流！',
   href: 'https://blog.099311.xyz',
@@ -17,7 +17,7 @@ export const NAV_LINKS: SocialLink[] = [
     label: '博客',
   },
   {
-    href: '/authors/qingying',
+    href: '/authors/qingyingx',
     label: '作者',
   },
   {
@@ -36,6 +36,10 @@ export const SOCIAL_LINKS: SocialLink[] = [
     label: '订阅',
   },
 ]
+
+export const THEME_TOGGLE = {
+  followPointer: false,
+} as const
 
 export const ICON_MAP: IconMap = {
   Website: 'lucide:globe',

@@ -1,0 +1,188 @@
+<div data-viewport-scrollbar data-visible="false" aria-hidden="true">
+  <div data-viewport-scrollbar-track>
+    <div data-viewport-scrollbar-rail></div>
+    <div data-viewport-scrollbar-thumb data-dragging="false"></div>
+  </div>
+</div>
+
+<script>
+  type ViewportScrollbarWindow = Window &
+    typeof globalThis & {
+      __viewportScrollbarInitialized?: boolean
+    }
+
+  const viewportScrollbarWindow = window as ViewportScrollbarWindow
+
+  type DragState = {
+    pointerId: number
+    pointerOffset: number
+  }
+
+  function clamp(value: number, min: number, max: number) {
+    return Math.min(max, Math.max(min, value))
+  }
+
+  function getScrollMetrics(track: HTMLElement) {
+    const viewportHeight = window.innerHeight
+    const documentHeight = Math.max(
+      document.documentElement.scrollHeight,
+      document.body.scrollHeight,
+    )
+    const scrollableHeight = Math.max(documentHeight - viewportHeight, 0)
+    const trackRect = track.getBoundingClientRect()
+    const trackHeight = trackRect.height
+    const thumbHeight =
+      scrollableHeight <= 0
+        ? trackHeight
+        : clamp(
+            (viewportHeight / documentHeight) * trackHeight,
+            44,
+            trackHeight,
+          )
+    const thumbTravel = Math.max(trackHeight - thumbHeight, 0)
+    const progress =
+      scrollableHeight <= 0 ? 0 : window.scrollY / Math.max(scrollableHeight, 1)
+    const thumbOffset = progress * thumbTravel
+
+    return {
+      scrollableHeight,
+      trackRect,
+      thumbHeight,
+      thumbTravel,
+      thumbOffset,
+    }
+  }
+
+  function initViewportScrollbar() {
+    const scrollbar = document.querySelector('[data-viewport-scrollbar]')
+    const track = scrollbar?.querySelector('[data-viewport-scrollbar-track]')
+    const thumb = scrollbar?.querySelector('[data-viewport-scrollbar-thumb]')
+
+    if (
+      !(scrollbar instanceof HTMLElement) ||
+      !(track instanceof HTMLElement) ||
+      !(thumb instanceof HTMLElement)
+    ) {
+      return
+    }
+
+    let dragState: DragState | null = null
+    let frameId: number | undefined
+
+    const setDraggingState = (isDragging: boolean) => {
+      thumb.dataset.dragging = isDragging ? 'true' : 'false'
+      document.documentElement.classList.toggle(
+        'viewport-scrollbar-dragging',
+        isDragging,
+      )
+    }
+
+    const scheduleUpdate = () => {
+      if (frameId) return
+
+      frameId = requestAnimationFrame(() => {
+        frameId = undefined
+
+        const metrics = getScrollMetrics(track)
+        const isScrollable = metrics.scrollableHeight > 1
+
+        scrollbar.dataset.visible = isScrollable ? 'true' : 'false'
+        thumb.style.height = `${metrics.thumbHeight}px`
+        thumb.style.transform = `translate3d(-50%, ${metrics.thumbOffset}px, 0)`
+      })
+    }
+
+    const scrollToPointerPosition = (
+      clientY: number,
+      pointerOffset: number,
+    ) => {
+      const metrics = getScrollMetrics(track)
+      if (metrics.scrollableHeight <= 0) return
+
+      const thumbTop = clamp(
+        clientY - metrics.trackRect.top - pointerOffset,
+        0,
+        metrics.thumbTravel,
+      )
+      const progress =
+        metrics.thumbTravel <= 0
+          ? 0
+          : thumbTop / Math.max(metrics.thumbTravel, 1)
+
+      window.scrollTo({
+        top: progress * metrics.scrollableHeight,
+        left: window.scrollX,
+        behavior: 'auto',
+      })
+    }
+
+    const stopDragging = () => {
+      dragState = null
+      setDraggingState(false)
+    }
+
+    const handlePointerMove = (event: PointerEvent) => {
+      if (!dragState || event.pointerId !== dragState.pointerId) return
+      scrollToPointerPosition(event.clientY, dragState.pointerOffset)
+    }
+
+    const handlePointerUp = (event: PointerEvent) => {
+      if (!dragState || event.pointerId !== dragState.pointerId) return
+      stopDragging()
+    }
+
+    thumb.addEventListener('pointerdown', (event) => {
+      const metrics = getScrollMetrics(track)
+
+      dragState = {
+        pointerId: event.pointerId,
+        pointerOffset: clamp(
+          event.clientY - metrics.trackRect.top - metrics.thumbOffset,
+          0,
+          metrics.thumbHeight,
+        ),
+      }
+
+      setDraggingState(true)
+      thumb.setPointerCapture(event.pointerId)
+      event.preventDefault()
+    })
+
+    track.addEventListener('pointerdown', (event) => {
+      if (event.target === thumb) return
+
+      const metrics = getScrollMetrics(track)
+      const pointerOffset = metrics.thumbHeight / 2
+
+      dragState = {
+        pointerId: event.pointerId,
+        pointerOffset,
+      }
+
+      setDraggingState(true)
+      scrollToPointerPosition(event.clientY, pointerOffset)
+      track.setPointerCapture(event.pointerId)
+      event.preventDefault()
+    })
+
+    window.addEventListener('pointermove', handlePointerMove)
+    window.addEventListener('pointerup', handlePointerUp)
+    window.addEventListener('pointercancel', handlePointerUp)
+    window.addEventListener('scroll', scheduleUpdate, { passive: true })
+    window.addEventListener('resize', scheduleUpdate)
+    document.addEventListener('astro:after-swap', scheduleUpdate)
+
+    if ('ResizeObserver' in window) {
+      const observer = new ResizeObserver(scheduleUpdate)
+      observer.observe(document.documentElement)
+      observer.observe(document.body)
+    }
+
+    scheduleUpdate()
+  }
+
+  if (!viewportScrollbarWindow.__viewportScrollbarInitialized) {
+    viewportScrollbarWindow.__viewportScrollbarInitialized = true
+    initViewportScrollbar()
+  }
+</script>
