@@ -42,10 +42,14 @@ import { CURSOR } from '@/config'
     legacyQuery.onchange = () => handler()
   }
 
-  function initCursor() {
+  function getCursorElement() {
     const cursor = document.querySelector('[data-cursor]')
+    return cursor instanceof HTMLElement ? cursor : null
+  }
 
-    if (!(cursor instanceof HTMLElement)) return
+  function initCursor() {
+    let cursor = getCursorElement()
+    if (!cursor) return
 
     const isEnabledFromConfig = cursor.dataset.enabled === 'true'
     const lag = clamp(Number(cursor.dataset.lag ?? '0.22'), 0.08, 0.45)
@@ -55,13 +59,30 @@ import { CURSOR } from '@/config'
     )
 
     let isActive = false
+    let isVisible = false
+    let isPressed = false
     let frameId: number | undefined
     let currentX = window.innerWidth / 2
     let currentY = window.innerHeight / 2
     let targetX = currentX
     let targetY = currentY
 
+    const syncCursorElement = () => {
+      cursor = getCursorElement()
+      if (!cursor) return
+
+      cursor.toggleAttribute('hidden', !isActive)
+      cursor.dataset.visible = isVisible ? 'true' : 'false'
+      cursor.dataset.pressed = isPressed ? 'true' : 'false'
+      cursor.style.transform = `translate3d(${currentX}px, ${currentY}px, 0)`
+    }
+
     const applyPosition = () => {
+      if (!cursor?.isConnected) {
+        syncCursorElement()
+      }
+
+      if (!cursor) return
       cursor.style.transform = `translate3d(${currentX}px, ${currentY}px, 0)`
     }
 
@@ -102,8 +123,9 @@ import { CURSOR } from '@/config'
     }
 
     const hideCursor = () => {
-      cursor.dataset.visible = 'false'
-      cursor.dataset.pressed = 'false'
+      isVisible = false
+      isPressed = false
+      syncCursorElement()
     }
 
     const syncAvailability = () => {
@@ -112,11 +134,14 @@ import { CURSOR } from '@/config'
         finePointerQuery.matches &&
         !reducedMotionQuery.matches
 
-      cursor.toggleAttribute('hidden', !isActive)
-
       if (!isActive) {
         stopFrame()
         hideCursor()
+        return
+      }
+
+      syncCursorElement()
+      if (!cursor) {
         return
       }
 
@@ -128,7 +153,7 @@ import { CURSOR } from '@/config'
       (event) => {
         if (!isActive || event.pointerType === 'touch') return
 
-        if (cursor.dataset.visible !== 'true') {
+        if (!isVisible) {
           jumpTo(event.clientX, event.clientY)
         } else {
           targetX = event.clientX
@@ -136,7 +161,8 @@ import { CURSOR } from '@/config'
           scheduleFrame()
         }
 
-        cursor.dataset.visible = 'true'
+        isVisible = true
+        syncCursorElement()
       },
       { passive: true },
     )
@@ -146,7 +172,7 @@ import { CURSOR } from '@/config'
       (event) => {
         if (!isActive || event.pointerType === 'touch') return
 
-        if (cursor.dataset.visible !== 'true') {
+        if (!isVisible) {
           jumpTo(event.clientX, event.clientY)
         } else {
           targetX = event.clientX
@@ -154,14 +180,16 @@ import { CURSOR } from '@/config'
           scheduleFrame()
         }
 
-        cursor.dataset.visible = 'true'
-        cursor.dataset.pressed = 'true'
+        isVisible = true
+        isPressed = true
+        syncCursorElement()
       },
       { passive: true },
     )
 
     const releasePressedState = () => {
-      cursor.dataset.pressed = 'false'
+      isPressed = false
+      syncCursorElement()
     }
 
     document.addEventListener('pointerup', releasePressedState, {
@@ -183,12 +211,18 @@ import { CURSOR } from '@/config'
     window.addEventListener(
       'resize',
       () => {
-        if (cursor.dataset.visible === 'true') return
+        if (isVisible) return
 
         jumpTo(window.innerWidth / 2, window.innerHeight / 2)
       },
       { passive: true },
     )
+    document.addEventListener('astro:after-swap', () => {
+      syncCursorElement()
+      if (!isActive) return
+
+      applyPosition()
+    })
 
     jumpTo(currentX, currentY)
     bindMediaQueryChange(finePointerQuery, syncAvailability)
