@@ -19,13 +19,17 @@ import { Icon } from 'astro-icon/components'
 
 <script is:inline data-astro-rerun>
   ;(() => {
-    const theme = (() => {
+    const resolvePreferredTheme = () => {
       const stored = localStorage?.getItem('theme') ?? ''
       if (['dark', 'light'].includes(stored)) return stored
       return window.matchMedia('(prefers-color-scheme: dark)').matches
         ? 'dark'
         : 'light'
-    })()
+    }
+
+    window.__resolvePreferredTheme = resolvePreferredTheme
+
+    const theme = resolvePreferredTheme()
 
     document.documentElement.setAttribute('data-theme', theme)
     window.localStorage.setItem('theme', theme)
@@ -40,32 +44,51 @@ import { Icon } from 'astro-icon/components'
   const THEME_TOGGLE_SELECTOR = '#theme-toggle'
   const THEME_TRANSITION_DURATION = 820
   const THEME_POINTER_FOLLOW = 0.18
-  const THEME_FADE_START = 0.72
   const THEME_SNAPSHOT_ATTRIBUTE = 'data-theme-transition-snapshot'
   const SHOULD_FOLLOW_POINTER = themeToggleFollowPointer
 
   const themeWindow = window
+  const resolvePreferredTheme =
+    themeWindow.__resolvePreferredTheme ??
+    (() => {
+      const storedTheme = window.localStorage.getItem(THEME_STORAGE_KEY)
+      if (storedTheme === 'dark' || storedTheme === 'light') {
+        return storedTheme
+      }
 
-  function getStoredTheme() {
-    const storedTheme = window.localStorage.getItem(THEME_STORAGE_KEY)
-    return storedTheme === 'dark' || storedTheme === 'light'
-      ? storedTheme
-      : null
-  }
-
-  function getPreferredTheme() {
-    return (
-      getStoredTheme() ??
-      (window.matchMedia('(prefers-color-scheme: dark)').matches
+      return window.matchMedia('(prefers-color-scheme: dark)').matches
         ? 'dark'
-        : 'light')
-    )
-  }
+        : 'light'
+    })
 
   function getCurrentTheme() {
     return document.documentElement.getAttribute('data-theme') === 'dark'
       ? 'dark'
       : 'light'
+  }
+
+  function registerThemeTransitionCleanup(cleanup) {
+    let cleanedUp = false
+
+    const finalize = () => {
+      if (cleanedUp) return
+
+      cleanedUp = true
+
+      if (themeWindow.__themeTransitionCleanup === finalize) {
+        themeWindow.__themeTransitionCleanup = undefined
+      }
+
+      themeWindow.__themeTransitionRunning = false
+      cleanup()
+    }
+
+    themeWindow.__themeTransitionCleanup = finalize
+    return finalize
+  }
+
+  function cancelRunningThemeTransition() {
+    themeWindow.__themeTransitionCleanup?.()
   }
 
   function disableThemeTransitions() {
@@ -92,11 +115,7 @@ import { Icon } from 'astro-icon/components'
   }
 
   function syncTheme() {
-    applyThemeWithoutTransitions(getPreferredTheme())
-  }
-
-  function applyThemeWithoutAnimation(theme) {
-    applyThemeWithoutTransitions(theme)
+    applyThemeWithoutTransitions(resolvePreferredTheme())
   }
 
   function getButtonCenter(button) {
@@ -154,12 +173,21 @@ import { Icon } from 'astro-icon/components'
     return !window.matchMedia('(prefers-reduced-motion: reduce)').matches
   }
 
+  function canUseViewTransition() {
+    return typeof document.startViewTransition === 'function'
+  }
+
+  function getThemeTransitionMode(theme) {
+    return theme === 'dark' ? 'expand' : 'shrink'
+  }
+
   function createThemeSnapshot(theme) {
     const snapshot = document.createElement('div')
     const snapshotContent = document.createElement('div')
 
     snapshot.setAttribute(THEME_SNAPSHOT_ATTRIBUTE, '')
     snapshot.setAttribute('aria-hidden', 'true')
+    snapshot.setAttribute('data-theme', theme)
 
     const rootStyles = window.getComputedStyle(document.documentElement)
 
@@ -183,10 +211,41 @@ import { Icon } from 'astro-icon/components'
     snapshotContent.setAttribute('data-theme', theme)
     snapshotContent.style.transform = `translate(${-window.scrollX}px, ${-window.scrollY}px)`
     snapshotContent.style.width = '100%'
+    snapshotContent.querySelectorAll('details[name]').forEach((detail) => {
+      detail.removeAttribute('name')
+    })
     snapshot.append(snapshotContent)
 
     document.body.append(snapshot)
     return snapshot
+  }
+
+  function applySnapshotMask(snapshot, pointer, radius) {
+    const resolvedRadius = Math.max(radius, 0)
+    const maskImage = `radial-gradient(circle at ${pointer.x}px ${pointer.y}px, transparent 0 ${resolvedRadius}px, #000 ${resolvedRadius}px 100%)`
+
+    snapshot.style.clipPath = 'inset(0)'
+    snapshot.style.webkitMaskImage = maskImage
+    snapshot.style.maskImage = maskImage
+    snapshot.style.webkitMaskRepeat = 'no-repeat'
+    snapshot.style.maskRepeat = 'no-repeat'
+  }
+
+  function clearSnapshotMask(snapshot) {
+    snapshot.style.webkitMaskImage = ''
+    snapshot.style.maskImage = ''
+    snapshot.style.webkitMaskRepeat = ''
+    snapshot.style.maskRepeat = ''
+  }
+
+  function setSnapshotRevealState(snapshot, mode, pointer, radius) {
+    if (mode === 'expand') {
+      applySnapshotMask(snapshot, pointer, radius)
+      return
+    }
+
+    clearSnapshotMask(snapshot)
+    snapshot.style.clipPath = `circle(${Math.max(radius, 0)}px at ${pointer.x}px ${pointer.y}px)`
   }
 
   function animateSnapshotReveal(
@@ -194,6 +253,8 @@ import { Icon } from 'astro-icon/components'
     origin,
     followPointer,
     lockedPointer,
+    mode,
+    transitionState,
   ) {
     let currentPointer = origin
 
@@ -201,6 +262,11 @@ import { Icon } from 'astro-icon/components'
       const startedAt = performance.now()
 
       const step = (now) => {
+        if (transitionState.cancelled) {
+          resolve()
+          return
+        }
+
         const progress = clamp(
           (now - startedAt) / THEME_TRANSITION_DURATION,
           0,
@@ -214,53 +280,129 @@ import { Icon } from 'astro-icon/components'
           y: lerp(currentPointer.y, target.y, THEME_POINTER_FOLLOW),
         }
 
-        const radius = getRevealRadius(currentPointer) * (1 - eased)
-        const fadeProgress = clamp(
-          (progress - THEME_FADE_START) / (1 - THEME_FADE_START),
-          0,
-          1,
-        )
+        const radius =
+          getRevealRadius(currentPointer) *
+          (mode === 'expand' ? eased : 1 - eased)
 
-        snapshot.style.clipPath = `circle(${Math.max(radius, 0)}px at ${currentPointer.x}px ${currentPointer.y}px)`
-        snapshot.style.opacity = String(1 - fadeProgress * 0.12)
+        setSnapshotRevealState(snapshot, mode, currentPointer, radius)
+        snapshot.style.opacity = '1'
 
         if (progress < 1) {
           requestAnimationFrame(step)
           return
         }
 
-        snapshot.style.clipPath = `circle(0px at ${currentPointer.x}px ${currentPointer.y}px)`
-        snapshot.style.opacity = '0'
+        setSnapshotRevealState(
+          snapshot,
+          mode,
+          currentPointer,
+          mode === 'expand' ? getRevealRadius(currentPointer) : 0,
+        )
         resolve()
       }
 
-      snapshot.style.clipPath = `circle(${getRevealRadius(currentPointer)}px at ${currentPointer.x}px ${currentPointer.y}px)`
+      setSnapshotRevealState(
+        snapshot,
+        mode,
+        currentPointer,
+        mode === 'expand' ? 0 : getRevealRadius(currentPointer),
+      )
       requestAnimationFrame(step)
     })
   }
 
+  function runThemeViewTransition(theme, origin) {
+    const transitionMode = getThemeTransitionMode(theme)
+    const restoreTransitions = disableThemeTransitions()
+    const radius = getRevealRadius(origin)
+    const pseudoElement =
+      transitionMode === 'expand'
+        ? '::view-transition-new(root)'
+        : '::view-transition-old(root)'
+
+    let clipAnimation
+
+    const finalize = registerThemeTransitionCleanup(() => {
+      clipAnimation?.cancel()
+      restoreTransitions()
+    })
+
+    try {
+      const transition = document.startViewTransition(() => {
+        applyTheme(theme)
+      })
+
+      transition.ready
+        .then(() => {
+          if (themeWindow.__themeTransitionCleanup !== finalize) return
+
+          clipAnimation = document.documentElement.animate(
+            {
+              clipPath:
+                transitionMode === 'expand'
+                  ? [
+                      `circle(0px at ${origin.x}px ${origin.y}px)`,
+                      `circle(${radius}px at ${origin.x}px ${origin.y}px)`,
+                    ]
+                  : [
+                      `circle(${radius}px at ${origin.x}px ${origin.y}px)`,
+                      `circle(0px at ${origin.x}px ${origin.y}px)`,
+                    ],
+            },
+            {
+              duration: THEME_TRANSITION_DURATION,
+              easing: 'cubic-bezier(0.65, 0, 0.35, 1)',
+              fill: 'both',
+              pseudoElement,
+            },
+          )
+
+          return clipAnimation.finished
+        })
+        .catch(() => {})
+        .finally(() => {
+          transition.finished.catch(() => {}).finally(finalize)
+        })
+    } catch {
+      applyTheme(theme)
+      finalize()
+    }
+  }
+
   function runThemeTransition(theme, origin, followPointer, lockedPointer) {
     const currentTheme = getCurrentTheme()
+    const transitionMode = getThemeTransitionMode(theme)
     const restoreTransitions = disableThemeTransitions()
     const snapshot = createThemeSnapshot(currentTheme)
+    const transitionState = { cancelled: false }
+    const finalize = registerThemeTransitionCleanup(() => {
+      transitionState.cancelled = true
+      snapshot.remove()
+      restoreTransitions()
+    })
 
     applyTheme(theme)
 
-    animateSnapshotReveal(snapshot, origin, followPointer, lockedPointer)
+    animateSnapshotReveal(
+      snapshot,
+      origin,
+      followPointer,
+      lockedPointer,
+      transitionMode,
+      transitionState,
+    )
       .catch(() => {})
-      .finally(() => {
-        snapshot.remove()
-        restoreTransitions()
-        themeWindow.__themeTransitionRunning = false
-      })
+      .finally(finalize)
   }
 
   function handleThemeToggleClick(button, event) {
-    if (themeWindow.__themeTransitionRunning) return
+    if (themeWindow.__themeTransitionRunning) {
+      cancelRunningThemeTransition()
+    }
 
     const newTheme = getCurrentTheme() === 'dark' ? 'light' : 'dark'
     if (!canAnimateThemeTransition()) {
-      applyThemeWithoutAnimation(newTheme)
+      applyThemeWithoutTransitions(newTheme)
       return
     }
 
@@ -273,6 +415,12 @@ import { Icon } from 'astro-icon/components'
     setLastPointer(origin)
 
     themeWindow.__themeTransitionRunning = true
+
+    if (!followPointer && canUseViewTransition()) {
+      runThemeViewTransition(newTheme, origin)
+      return
+    }
+
     runThemeTransition(newTheme, origin, followPointer, lockedPointer)
   }
 

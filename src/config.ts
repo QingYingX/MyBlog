@@ -21,6 +21,10 @@ export const NAV_LINKS: SocialLink[] = [
     label: '博客',
   },
   {
+    href: '/tags',
+    label: '标签',
+  },
+  {
     href: '/authors/qingyingx',
     label: '作者',
   },

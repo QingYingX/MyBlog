@@ -1,9 +1,11 @@
 ---
 import BlogCard from '@/components/blog-card.astro'
 import Breadcrumbs from '@/components/breadcrumbs.astro'
+import Link from '@/components/link.astro'
 import PageHead from '@/components/page-head.astro'
 import Layout from '@/layouts/layout.astro'
-import { getAllTags, getPostsByTag } from '@/lib/data-utils'
+import { getAllTags, getPostsByTag, getSortedTags } from '@/lib/data-utils'
+import { Icon } from 'astro-icon/components'
 
 export async function getStaticPaths() {
   const tagMap = await getAllTags()
@@ -24,6 +26,8 @@ export async function getStaticPaths() {
 }
 
 const { tag, posts } = Astro.props
+const sortedTags = await getSortedTags()
+const siblingTags = sortedTags.filter((item) => item.tag !== tag).slice(0, 8)
 ---
 
 <Layout class="max-w-3xl">
@@ -40,13 +44,69 @@ const { tag, posts } = Astro.props
     ]}
   />
 
-  <ul class="flex flex-col gap-y-4">
-    {
-      posts.map((post) => (
-        <li>
-          <BlogCard entry={post} />
-        </li>
-      ))
-    }
-  </ul>
+  <section class="flex flex-col gap-6">
+    <div class="space-y-4">
+      <div
+        class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"
+      >
+        <div class="space-y-3">
+          <h1 class="text-3xl font-semibold sm:text-4xl">#{tag}</h1>
+          <p
+            class="text-muted-foreground max-w-2xl text-sm leading-7 sm:text-base"
+          >
+            这里收录了所有带有 #{tag} 标签的文章，方便从同一主题继续往下看。
+          </p>
+        </div>
+
+        <div
+          class="text-muted-foreground inline-flex items-center gap-2 text-sm"
+        >
+          <Icon name="lucide:file-stack" class="size-4" />
+          共 {posts.length} 篇文章
+        </div>
+      </div>
+
+      {
+        siblingTags.length > 0 && (
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="text-muted-foreground me-1 text-sm">其他标签</span>
+            {siblingTags.map(({ tag: siblingTag, count }) => (
+              <Link
+                href={`/tags/${siblingTag}`}
+                class="bg-muted/15 hover:bg-muted/30 inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm transition-colors"
+              >
+                <Icon name="lucide:hash" class="size-3.5" />
+                {siblingTag}
+                <span class="text-muted-foreground text-xs">{count}</span>
+              </Link>
+            ))}
+          </div>
+        )
+      }
+    </div>
+
+    <div class="flex items-center justify-between gap-4">
+      <div class="flex items-center gap-2 text-sm">
+        <Icon name="lucide:scan-search" class="text-muted-foreground size-4" />
+        <span class="text-muted-foreground">与 #{tag} 相关的文章</span>
+      </div>
+      <Link
+        href="/tags"
+        class="text-muted-foreground hover:text-foreground inline-flex items-center gap-2 text-sm transition-colors"
+      >
+        <Icon name="lucide:arrow-left" class="size-4" />
+        返回全部标签
+      </Link>
+    </div>
+
+    <ul class="flex flex-col gap-y-4">
+      {
+        posts.map((post) => (
+          <li>
+            <BlogCard entry={post} />
+          </li>
+        ))
+      }
+    </ul>
+  </section>
 </Layout>

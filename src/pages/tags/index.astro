@@ -2,32 +2,76 @@
 import Breadcrumbs from '@/components/breadcrumbs.astro'
 import Link from '@/components/link.astro'
 import PageHead from '@/components/page-head.astro'
-import { badgeVariants } from '@/components/ui/badge'
 import Layout from '@/layouts/layout.astro'
-import { getSortedTags } from '@/lib/data-utils'
+import { getAllPosts, getSortedTags } from '@/lib/data-utils'
 import { Icon } from 'astro-icon/components'
 
 const sortedTags = await getSortedTags()
+const allPosts = await getAllPosts()
+const totalTags = sortedTags.length
+const totalTaggedPosts = allPosts.filter(
+  (post) => (post.data.tags?.length ?? 0) > 0,
+).length
 ---
 
 <Layout class="max-w-3xl">
   <PageHead slot="head" title="标签" />
   <Breadcrumbs items={[{ label: '标签', icon: 'lucide:tags' }]} />
 
-  <div class="flex flex-col gap-4">
-    <div class="flex flex-wrap gap-2">
-      {
-        sortedTags.map(({ tag, count }) => (
-          <Link
-            href={`/tags/${tag}`}
-            class={badgeVariants({ variant: 'muted' })}
-          >
-            <Icon name="lucide:hash" class="size-3" />
-            {tag}
-            <span class="text-muted-foreground ml-1.5">({count})</span>
-          </Link>
-        ))
-      }
+  <section class="flex flex-col gap-6">
+    <div class="space-y-3">
+      <h1 class="text-3xl font-semibold sm:text-4xl">标签</h1>
+      <p class="text-muted-foreground max-w-2xl text-sm leading-7 sm:text-base">
+        用标签把文章按主题重新整理一遍。比起按时间翻找，这里更适合从感兴趣的话题直接开始看。
+      </p>
+      <div
+        class="text-muted-foreground flex flex-wrap items-center gap-x-4 gap-y-2 text-sm"
+      >
+        <span class="inline-flex items-center gap-2">
+          <Icon name="lucide:tags" class="size-4" />
+          共 {totalTags} 个标签
+        </span>
+        <span class="inline-flex items-center gap-2">
+          <Icon name="lucide:book-open-text" class="size-4" />
+          覆盖 {totalTaggedPosts} 篇文章
+        </span>
+      </div>
     </div>
-  </div>
+
+    {
+      totalTags > 0 ? (
+        <div class="space-y-4">
+          <div class="text-muted-foreground flex items-center gap-2 text-sm">
+            <Icon name="lucide:arrow-down-wide-narrow" class="size-4" />
+            按文章数量排序，点进标签就能继续往下看。
+          </div>
+
+          <ul class="grid gap-3 sm:grid-cols-2">
+            {sortedTags.map(({ tag, count }) => (
+              <li>
+                <Link
+                  href={`/tags/${tag}`}
+                  class="group bg-muted/10 hover:bg-muted/25 flex items-center gap-3 rounded-xl border px-4 py-3 transition-colors"
+                >
+                  <div class="min-w-0 grow">
+                    <h2 class="truncate text-sm font-medium sm:text-base">
+                      #{tag}
+                    </h2>
+                  </div>
+
+                  <span class="bg-background/90 text-muted-foreground inline-flex shrink-0 items-center rounded-full border px-2.5 py-1 text-xs tabular-nums">
+                    {count} 篇
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : (
+        <div class="text-muted-foreground bg-muted/15 rounded-2xl border px-6 py-10 text-center">
+          暂时还没有可浏览的标签。
+        </div>
+      )
+    }
+  </section>
 </Layout>
