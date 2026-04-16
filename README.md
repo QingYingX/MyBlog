@@ -17,6 +17,7 @@
 - 支持子文章结构，适合拆分长文或系列内容。
 - 集成 Expressive Code、Shiki 和 KaTeX，适合技术写作。
 - 自带深浅色主题切换和 Astro View Transitions 页面过渡。
+- 支持桌面端鼠标跟随小圆点效果，可在配置中一键开关。
 - 基于 Tailwind CSS 4 和一组轻量 UI 组件，方便继续定制。
 
 ## 技术栈
@@ -130,13 +131,37 @@ docker run -d --name MyBlog -p 39393:39393 --restart unless-stopped myblog
 │  ├─ lib/                  # 数据处理与工具函数
 │  ├─ pages/                # 路由页面
 │  ├─ styles/               # 全局样式与排版样式
-│  ├─ config.ts             # 站点信息、导航、主题切换等统一配置
+│  ├─ config.ts             # 站点信息、导航、主题切换、鼠标效果等统一配置
 │  └─ content.config.ts     # 内容集合 schema
 ├─ astro.config.ts          # Astro 配置
 ├─ Dockerfile               # Docker 镜像构建配置
 ├─ docker-compose.yml       # Docker Compose 运行配置
 ├─ tsconfig.json            # TypeScript 配置
 └─ package.json             # 脚本与依赖
+```
+
+## 站点配置
+
+项目里大多数“站点层面的调节项”都集中在 `src/config.ts`，日常修改时优先看这个文件。
+
+当前主要配置项包括：
+
+| 配置项                       | 说明                                                         |
+| ---------------------------- | ------------------------------------------------------------ |
+| `SITE`                       | 站点标题、描述、域名、默认作者、语言、首页精选数量、分页大小 |
+| `NAV_LINKS`                  | 顶部导航链接                                                 |
+| `SOCIAL_LINKS`               | 页脚和社交链接                                               |
+| `THEME_TOGGLE.followPointer` | 主题切换圆形动效是否跟随鼠标位置                             |
+| `CURSOR.enabled`             | 是否启用桌面端鼠标跟随小圆点                                 |
+| `CURSOR.lag`                 | 鼠标圆点的跟随阻尼，值越大越跟手                             |
+
+例如，关闭鼠标跟随圆点可以这样改：
+
+```ts
+export const CURSOR = {
+  enabled: false,
+  lag: 0.22,
+} as const
 ```
 
 ## 内容管理

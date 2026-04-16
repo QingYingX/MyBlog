@@ -51,6 +51,12 @@ export const THEME_TOGGLE = {
   followPointer: false, // true: 动画收束点跟随鼠标；false: 始终锁定在按钮中心
 } as const
 
+// 鼠标样式配置。
+export const CURSOR = {
+  enabled: true, // true: 显示跟随鼠标的小圆点；false: 完全关闭
+  lag: 0.22, // 越小越柔和，越大越贴手，建议范围 0.12 ~ 0.35
+} as const
+
 // 社交字段名和图标的映射。
 // 作者 frontmatter 或社交链接里出现的名称，需要能在这里找到对应图标。
 export const ICON_MAP: IconMap = {

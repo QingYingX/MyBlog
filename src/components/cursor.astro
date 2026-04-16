@@ -1,0 +1,203 @@
+---
+import { CURSOR } from '@/config'
+---
+
+<div
+  data-cursor
+  data-enabled={CURSOR.enabled ? 'true' : 'false'}
+  data-lag={String(CURSOR.lag)}
+  data-visible="false"
+  data-pressed="false"
+  aria-hidden="true"
+  hidden
+>
+  <div data-cursor-dot></div>
+</div>
+
+<script>
+  type CursorWindow = Window &
+    typeof globalThis & {
+      __cursorInitialized?: boolean
+    }
+
+  const cursorWindow = window as CursorWindow
+
+  function clamp(value: number, min: number, max: number) {
+    return Math.min(max, Math.max(min, value))
+  }
+
+  function bindMediaQueryChange(
+    query: MediaQueryList,
+    handler: () => void,
+  ): void {
+    if ('addEventListener' in query) {
+      query.addEventListener('change', handler)
+      return
+    }
+
+    const legacyQuery = query as MediaQueryList & {
+      onchange: ((event: MediaQueryListEvent) => void) | null
+    }
+
+    legacyQuery.onchange = () => handler()
+  }
+
+  function initCursor() {
+    const cursor = document.querySelector('[data-cursor]')
+
+    if (!(cursor instanceof HTMLElement)) return
+
+    const isEnabledFromConfig = cursor.dataset.enabled === 'true'
+    const lag = clamp(Number(cursor.dataset.lag ?? '0.22'), 0.08, 0.45)
+    const finePointerQuery = window.matchMedia('(pointer: fine)')
+    const reducedMotionQuery = window.matchMedia(
+      '(prefers-reduced-motion: reduce)',
+    )
+
+    let isActive = false
+    let frameId: number | undefined
+    let currentX = window.innerWidth / 2
+    let currentY = window.innerHeight / 2
+    let targetX = currentX
+    let targetY = currentY
+
+    const applyPosition = () => {
+      cursor.style.transform = `translate3d(${currentX}px, ${currentY}px, 0)`
+    }
+
+    const stopFrame = () => {
+      if (frameId === undefined) return
+      cancelAnimationFrame(frameId)
+      frameId = undefined
+    }
+
+    const jumpTo = (x: number, y: number) => {
+      currentX = x
+      currentY = y
+      targetX = x
+      targetY = y
+      applyPosition()
+    }
+
+    const tick = () => {
+      frameId = undefined
+
+      if (!isActive) return
+
+      currentX += (targetX - currentX) * lag
+      currentY += (targetY - currentY) * lag
+      applyPosition()
+
+      if (
+        Math.abs(targetX - currentX) > 0.12 ||
+        Math.abs(targetY - currentY) > 0.12
+      ) {
+        frameId = requestAnimationFrame(tick)
+      }
+    }
+
+    const scheduleFrame = () => {
+      if (!isActive || frameId !== undefined) return
+      frameId = requestAnimationFrame(tick)
+    }
+
+    const hideCursor = () => {
+      cursor.dataset.visible = 'false'
+      cursor.dataset.pressed = 'false'
+    }
+
+    const syncAvailability = () => {
+      isActive =
+        isEnabledFromConfig &&
+        finePointerQuery.matches &&
+        !reducedMotionQuery.matches
+
+      cursor.toggleAttribute('hidden', !isActive)
+
+      if (!isActive) {
+        stopFrame()
+        hideCursor()
+        return
+      }
+
+      applyPosition()
+    }
+
+    document.addEventListener(
+      'pointermove',
+      (event) => {
+        if (!isActive || event.pointerType === 'touch') return
+
+        if (cursor.dataset.visible !== 'true') {
+          jumpTo(event.clientX, event.clientY)
+        } else {
+          targetX = event.clientX
+          targetY = event.clientY
+          scheduleFrame()
+        }
+
+        cursor.dataset.visible = 'true'
+      },
+      { passive: true },
+    )
+
+    document.addEventListener(
+      'pointerdown',
+      (event) => {
+        if (!isActive || event.pointerType === 'touch') return
+
+        if (cursor.dataset.visible !== 'true') {
+          jumpTo(event.clientX, event.clientY)
+        } else {
+          targetX = event.clientX
+          targetY = event.clientY
+          scheduleFrame()
+        }
+
+        cursor.dataset.visible = 'true'
+        cursor.dataset.pressed = 'true'
+      },
+      { passive: true },
+    )
+
+    const releasePressedState = () => {
+      cursor.dataset.pressed = 'false'
+    }
+
+    document.addEventListener('pointerup', releasePressedState, {
+      passive: true,
+    })
+    document.addEventListener('pointercancel', releasePressedState, {
+      passive: true,
+    })
+    document.addEventListener('pointerout', (event) => {
+      if (event.relatedTarget !== null) return
+      hideCursor()
+    })
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) return
+      hideCursor()
+    })
+
+    window.addEventListener('blur', hideCursor)
+    window.addEventListener(
+      'resize',
+      () => {
+        if (cursor.dataset.visible === 'true') return
+
+        jumpTo(window.innerWidth / 2, window.innerHeight / 2)
+      },
+      { passive: true },
+    )
+
+    jumpTo(currentX, currentY)
+    bindMediaQueryChange(finePointerQuery, syncAvailability)
+    bindMediaQueryChange(reducedMotionQuery, syncAvailability)
+    syncAvailability()
+  }
+
+  if (!cursorWindow.__cursorInitialized) {
+    cursorWindow.__cursorInitialized = true
+    initCursor()
+  }
+</script>

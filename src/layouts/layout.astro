@@ -2,6 +2,7 @@
 import '@/styles/global.css'
 import '@/styles/typography.css'
 
+import Cursor from '@/components/cursor.astro'
 import Footer from '@/components/footer.astro'
 import Head from '@/components/head.astro'
 import Header from '@/components/header.astro'
@@ -38,6 +39,7 @@ const { class: className } = Astro.props
     >
       <slot />
     </main>
+    <Cursor transition:persist />
     <Footer />
     <ViewportScrollbar transition:persist />
   </body>
