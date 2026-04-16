@@ -1,3 +1,7 @@
+// 内容集合 schema 定义。
+// 这里约束 frontmatter / 数据结构，不负责站点标题、导航、主题等展示配置。
+// 这些日常配置统一放在 `src/config.ts`。
+
 import { glob } from 'astro/loaders'
 import { defineCollection } from 'astro:content'
 import { z } from 'astro/zod'

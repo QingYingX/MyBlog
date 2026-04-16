@@ -4,8 +4,8 @@
 
 一个基于 [Astro](https://astro.build/) 构建的中文静态博客项目，适合整理文章、笔记、教程和项目记录。项目基于 `astro-erudite` 演化而来，已经完成了中文化和站点信息定制，同时保留了较完整的博客能力。
 
-| 预览 1 | 预览 2 |
-| --- | --- |
+| 预览 1                                 | 预览 2                                 |
+| -------------------------------------- | -------------------------------------- |
 | ![预览 1](public/static/preview-1.png) | ![预览 2](public/static/preview-2.png) |
 | ![预览 3](public/static/preview-3.png) | ![预览 4](public/static/preview-4.png) |
 
@@ -21,16 +21,16 @@
 
 ## 技术栈
 
-| 分类 | 技术 |
-| --- | --- |
-| 框架 | Astro 6 |
-| 样式 | Tailwind CSS 4 |
-| 组件 | Astro 组件 + 少量 React 组件 |
-| 内容 | Markdown / MDX |
-| 代码高亮 | Expressive Code、Shiki |
-| 数学公式 | KaTeX |
-| 图标 | astro-icon、Lucide |
-| 类型检查 | TypeScript、`astro check` |
+| 分类     | 技术                         |
+| -------- | ---------------------------- |
+| 框架     | Astro 6                      |
+| 样式     | Tailwind CSS 4               |
+| 组件     | Astro 组件 + 少量 React 组件 |
+| 内容     | Markdown / MDX               |
+| 代码高亮 | Expressive Code、Shiki       |
+| 数学公式 | KaTeX                        |
+| 图标     | astro-icon、Lucide           |
+| 类型检查 | TypeScript、`astro check`    |
 
 ## 快速开始
 
@@ -105,15 +105,15 @@ docker run -d --name MyBlog -p 39393:39393 --restart unless-stopped myblog
 
 ## 常用命令
 
-| 命令 | 说明 |
-| --- | --- |
-| `npm run dev` | 启动本地开发服务器，默认访问 `http://localhost:39393` |
-| `npm run build` | 先做类型检查，再构建静态站点 |
-| `npm run preview` | 本地预览构建后的站点 |
-| `npm run start` | 以 `0.0.0.0` 监听方式启动 Astro 预览服务，适合容器环境 |
-| `npm run serve` | 先构建再启动预览服务，Docker 默认执行这个命令 |
-| `npm run astro` | 执行 Astro CLI |
-| `npm run prettier` | 格式化 `ts`、`tsx`、`css`、`astro` 文件 |
+| 命令               | 说明                                                   |
+| ------------------ | ------------------------------------------------------ |
+| `npm run dev`      | 启动本地开发服务器，默认访问 `http://localhost:39393`  |
+| `npm run build`    | 先做类型检查，再构建静态站点                           |
+| `npm run preview`  | 本地预览构建后的站点                                   |
+| `npm run start`    | 以 `0.0.0.0` 监听方式启动 Astro 预览服务，适合容器环境 |
+| `npm run serve`    | 先构建再启动预览服务，Docker 默认执行这个命令          |
+| `npm run astro`    | 执行 Astro CLI                                         |
+| `npm run prettier` | 格式化 `ts`、`tsx`、`css`、`astro` 文件                |
 
 ## 目录结构
 
@@ -130,7 +130,7 @@ docker run -d --name MyBlog -p 39393:39393 --restart unless-stopped myblog
 │  ├─ lib/                  # 数据处理与工具函数
 │  ├─ pages/                # 路由页面
 │  ├─ styles/               # 全局样式与排版样式
-│  ├─ consts.ts             # 站点信息、导航和社交链接
+│  ├─ config.ts             # 站点信息、导航、主题切换等统一配置
 │  └─ content.config.ts     # 内容集合 schema
 ├─ astro.config.ts          # Astro 配置
 ├─ Dockerfile               # Docker 镜像构建配置
@@ -167,16 +167,16 @@ draft: false
 
 当前博客内容 schema 支持以下字段：
 
-| 字段 | 类型 | 是否必填 | 说明 |
-| --- | --- | --- | --- |
-| `title` | `string` | 是 | 文章标题 |
-| `description` | `string` | 是 | 文章摘要 |
-| `date` | `date` | 是 | 发布日期 |
-| `order` | `number` | 否 | 同一天的子文章排序 |
-| `image` | `image` | 否 | 文章封面 |
-| `tags` | `string[]` | 否 | 标签列表 |
-| `authors` | `string[]` | 否 | 作者 id 列表 |
-| `draft` | `boolean` | 否 | 是否草稿 |
+| 字段          | 类型       | 是否必填 | 说明               |
+| ------------- | ---------- | -------- | ------------------ |
+| `title`       | `string`   | 是       | 文章标题           |
+| `description` | `string`   | 是       | 文章摘要           |
+| `date`        | `date`     | 是       | 发布日期           |
+| `order`       | `number`   | 否       | 同一天的子文章排序 |
+| `image`       | `image`    | 否       | 文章封面           |
+| `tags`        | `string[]` | 否       | 标签列表           |
+| `authors`     | `string[]` | 否       | 作者 id 列表       |
+| `draft`       | `boolean`  | 否       | 是否草稿           |
 
 ### 子文章
 
@@ -263,18 +263,27 @@ src/content/projects/
 
 以下文件是接手这个项目后最常改的几个地方：
 
-- `src/consts.ts`：站点标题、描述、导航、社交链接、分页数量。
+- `src/config.ts`：站点标题、描述、导航、社交链接、分页数量、主题切换配置。
+- `src/content.config.ts`：内容集合 schema，用来约束文章、作者、项目的 frontmatter 结构。
 - `astro.config.ts`：Astro 插件、开发端口、Markdown 处理、站点域名。
 - `src/styles/global.css`：主题色、字体变量和基础样式。
 - `src/styles/typography.css`：文章排版样式。
 - `src/pages/index.astro`：首页文案与首页结构。
 - `src/pages/about.astro`：关于页内容与项目展示区。
 
+如果你只是在找“平时最常改的站点配置”，可以优先看 `src/config.ts`。当前集中在这里的主要配置有：
+
+- `SITE`：站点标题、描述、域名、默认作者、语言、首页精选数量、分页大小。
+- `NAV_LINKS`：顶部导航。
+- `SOCIAL_LINKS`：页脚社交链接。
+- `THEME_TOGGLE.followPointer`：主题切换动画是否跟随鼠标移动，`false` 时会锁定在按钮中心。
+- `ICON_MAP`：社交字段名称和图标的映射关系。
+
 ## 部署提醒
 
 如果你要把这个项目改成自己的正式站点，至少同步检查下面两处：
 
-- `src/consts.ts` 中的 `SITE.href`
+- `src/config.ts` 中的 `SITE.href`
 - `astro.config.ts` 中的 `site`
 
 修改站点域名时，这两处最好保持一致，否则 RSS、Sitemap、canonical URL 和社交分享元信息可能会指向错误地址。
