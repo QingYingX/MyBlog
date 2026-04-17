@@ -17,3 +17,4 @@ pnpm-debug.log*
 openresty/
 teaser.pptx
 ~$teaser.pptx
+.claude/

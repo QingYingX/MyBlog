@@ -1,6 +1,8 @@
 ---
 import Breadcrumbs from '@/components/breadcrumbs.astro'
+import Comments from '@/components/comments.astro'
 import PageHead from '@/components/page-head.astro'
+import { COMMENTS } from '@/config'
 import Layout from '@/layouts/layout.astro'
 import { Icon } from 'astro-icon/components'
 import { readdir } from 'node:fs/promises'
@@ -57,6 +59,14 @@ const photos = photoFiles.map((filePath) => {
   }
 })
 const photoCount = photos.length
+const commentsEnabled = COMMENTS.enabled && COMMENTS.defaultEnabled
+const commentsConfig = commentsEnabled
+  ? {
+      serverUrl: COMMENTS.serverUrl,
+      scriptUrl: COMMENTS.scriptUrl,
+      lang: COMMENTS.lang,
+    }
+  : null
 ---
 
 <Layout class="max-w-5xl">
@@ -124,6 +134,8 @@ const photoCount = photos.length
     }
   </section>
 
+  {commentsEnabled && <Comments path="/photos" title="照片墙" />}
+
   <div
     class="pointer-events-none fixed inset-0 z-[120] opacity-0 transition-opacity duration-200"
     data-photo-preview
@@ -154,6 +166,21 @@ const photoCount = photos.length
       </div>
 
       <div class="pointer-events-none flex items-center gap-2">
+        {
+          commentsEnabled && (
+            <button
+              type="button"
+              class="pointer-events-auto inline-flex items-center gap-1.5 rounded-full border border-white/16 bg-black/30 px-3 py-2 text-xs text-white/82 transition-colors hover:bg-black/44 hover:text-white sm:text-sm"
+              data-photo-preview-comments-toggle
+              data-photo-preview-safe
+              aria-label="查看本张图片的评论"
+            >
+              <Icon name="lucide:message-circle" class="size-4" />
+              评论
+            </button>
+          )
+        }
+
         <a
           href="#"
           target="_blank"
@@ -218,6 +245,51 @@ const photoCount = photos.length
         />
       </figure>
     </div>
+
+    {
+      commentsEnabled && commentsConfig && (
+        <aside
+          class="fixed top-0 right-0 bottom-0 z-30 flex h-full w-full max-w-[min(520px,92vw)] flex-col border-l border-white/12 bg-neutral-950/96 text-white shadow-[-18px_0_48px_-16px_rgba(0,0,0,0.95)] backdrop-blur-md transition-transform duration-300 ease-out before:pointer-events-none before:absolute before:inset-y-0 before:-left-6 before:w-6 before:bg-linear-to-r before:from-transparent before:to-black/55"
+          data-photo-preview-comments
+          data-photo-preview-safe
+          aria-hidden="true"
+        >
+          <header class="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
+            <div class="min-w-0">
+              <p class="text-xs tracking-[0.2em] text-white/50 uppercase">
+                Comments
+              </p>
+              <p
+                class="truncate text-sm font-medium"
+                data-photo-preview-comments-title
+              >
+                评论
+              </p>
+            </div>
+            <button
+              type="button"
+              class="inline-flex size-9 shrink-0 items-center justify-center rounded-full border border-white/16 bg-black/30 text-white/82 transition-colors hover:bg-black/44 hover:text-white"
+              data-photo-preview-comments-close
+              aria-label="关闭评论面板"
+            >
+              <Icon name="lucide:x" class="size-4" />
+            </button>
+          </header>
+
+          <div class="flex-1 overflow-y-auto px-4 py-4">
+            <div
+              class="twikoo-photo-comments"
+              data-photo-preview-comments-root
+              data-server-url={commentsConfig.serverUrl}
+              data-script-url={commentsConfig.scriptUrl}
+              data-lang={commentsConfig.lang}
+            >
+              <p class="text-sm text-white/60">打开评论后开始加载……</p>
+            </div>
+          </div>
+        </aside>
+      )
+    }
   </div>
 </Layout>
 
@@ -265,17 +337,222 @@ const photoCount = photos.length
     opacity: 0.35;
     pointer-events: none;
   }
+
+  [data-photo-preview-comments] {
+    transform: translateX(100%);
+    pointer-events: none;
+  }
+
+  [data-photo-preview-comments][data-open='true'] {
+    transform: translateX(0);
+    pointer-events: auto;
+  }
+
+  .twikoo-photo-comments {
+    color: rgba(255, 255, 255, 0.88);
+    font-size: 13px;
+  }
+
+  /* 顶部昵称/邮箱/网址三项横排 */
+  .twikoo-photo-comments .tk-meta-input {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .twikoo-photo-comments .el-input__inner,
+  .twikoo-photo-comments .el-textarea__inner {
+    background-color: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.12);
+    color: #fff;
+    border-radius: 10px;
+    transition:
+      border-color 160ms ease,
+      background-color 160ms ease;
+  }
+
+  .twikoo-photo-comments .el-input__inner::placeholder,
+  .twikoo-photo-comments .el-textarea__inner::placeholder {
+    color: rgba(255, 255, 255, 0.38);
+  }
+
+  .twikoo-photo-comments .el-input__inner:focus,
+  .twikoo-photo-comments .el-textarea__inner:focus {
+    background-color: rgba(255, 255, 255, 0.09);
+    border-color: rgba(255, 255, 255, 0.32);
+  }
+
+  .twikoo-photo-comments .tk-input {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .twikoo-photo-comments .tk-input label {
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 12px;
+  }
+
+  .twikoo-photo-comments .tk-tag {
+    color: rgba(255, 255, 255, 0.45);
+    background: transparent;
+    border: none;
+    padding: 0;
+    font-size: 11px;
+  }
+
+  .twikoo-photo-comments .tk-submit-action-icon,
+  .twikoo-photo-comments .tk-action-icon {
+    color: rgba(255, 255, 255, 0.72);
+  }
+
+  .twikoo-photo-comments .tk-preview,
+  .twikoo-photo-comments .tk-send {
+    border-radius: 8px;
+  }
+
+  .twikoo-photo-comments .tk-send {
+    background: #3b82f6;
+    border-color: transparent;
+    color: #fff;
+  }
+
+  .twikoo-photo-comments .tk-send:hover {
+    background: #2563eb;
+  }
+
+  .twikoo-photo-comments .tk-avatar {
+    border-radius: 999px;
+  }
+
+  .twikoo-photo-comments .tk-comments-count,
+  .twikoo-photo-comments .tk-extras {
+    color: rgba(255, 255, 255, 0.55);
+  }
+
+  .twikoo-photo-comments .tk-comments-container,
+  .twikoo-photo-comments .tk-comment {
+    color: rgba(255, 255, 255, 0.85);
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+
+  /* 空评论时不要强撑 10rem；没评论就只占一行 */
+  .twikoo-photo-comments .tk-comments-container {
+    min-height: 0;
+  }
+
+  .twikoo-photo-comments .tk-comments-no {
+    flex: none;
+    justify-content: flex-start;
+    padding: 0.5rem 0;
+    font-size: 0.8125rem;
+  }
+
+  .twikoo-photo-comments .tk-extras {
+    margin-top: 0.25rem;
+  }
+
+  .twikoo-photo-comments .tk-nick,
+  .twikoo-photo-comments .tk-meta {
+    color: rgba(255, 255, 255, 0.7);
+  }
+
+  .twikoo-photo-comments .tk-content {
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  .twikoo-photo-comments a {
+    color: #93c5fd;
+  }
+
+  .twikoo-photo-comments .tk-footer {
+    color: rgba(255, 255, 255, 0.4);
+  }
 </style>
 
 <script>
   type PhotoPreviewWindow = Window & {
     __photoPreviewCleanup?: () => void
+    __twikooScriptPromise?: Promise<void>
+    twikoo?: {
+      init: (options: {
+        envId: string
+        el: HTMLElement
+        path?: string
+        lang?: string
+        pageTitle?: string
+      }) => Promise<unknown> | unknown
+    }
   }
 
   type PhotoPreviewItem = {
     src: string
     alt: string
     title: string
+    commentPath: string
+  }
+
+  const TWIKOO_SCRIPT_ID = 'twikoo-client-script'
+
+  function slugifyForPath(value: string) {
+    return (
+      value
+        .normalize('NFKC')
+        .trim()
+        .replace(/[\s/\\?#]+/g, '-')
+        .replace(/^-+|-+$/g, '') || 'untitled'
+    )
+  }
+
+  async function ensureTwikooScript(scriptUrl: string) {
+    const win = window as PhotoPreviewWindow
+    if (win.twikoo) return
+    if (win.__twikooScriptPromise) {
+      await win.__twikooScriptPromise
+      return
+    }
+
+    win.__twikooScriptPromise = new Promise<void>((resolve, reject) => {
+      const existing = document.getElementById(TWIKOO_SCRIPT_ID)
+      if (existing instanceof HTMLScriptElement) {
+        if (win.twikoo) {
+          resolve()
+          return
+        }
+        existing.addEventListener('load', () => resolve(), { once: true })
+        existing.addEventListener(
+          'error',
+          () => {
+            win.__twikooScriptPromise = undefined
+            reject(new Error('Twikoo script failed to load.'))
+          },
+          { once: true },
+        )
+        return
+      }
+
+      const script = document.createElement('script')
+      script.id = TWIKOO_SCRIPT_ID
+      script.src = scriptUrl
+      script.async = true
+      script.addEventListener('load', () => resolve(), { once: true })
+      script.addEventListener(
+        'error',
+        () => {
+          win.__twikooScriptPromise = undefined
+          script.remove()
+          reject(new Error('Twikoo script failed to load.'))
+        },
+        { once: true },
+      )
+      document.head.appendChild(script)
+    })
+
+    await win.__twikooScriptPromise
+    if (!win.twikoo) {
+      win.__twikooScriptPromise = undefined
+      throw new Error('Twikoo client unavailable after load.')
+    }
   }
 
   function initPhotoPreview() {
@@ -329,6 +606,22 @@ const photoCount = photos.length
       return
     }
 
+    const commentsDrawer = root.querySelector<HTMLElement>(
+      '[data-photo-preview-comments]',
+    )
+    const commentsToggle = root.querySelector<HTMLButtonElement>(
+      '[data-photo-preview-comments-toggle]',
+    )
+    const commentsClose = root.querySelector<HTMLButtonElement>(
+      '[data-photo-preview-comments-close]',
+    )
+    const commentsRoot = root.querySelector<HTMLElement>(
+      '[data-photo-preview-comments-root]',
+    )
+    const commentsTitle = root.querySelector<HTMLElement>(
+      '[data-photo-preview-comments-title]',
+    )
+
     const previewRoot = root
     const previewImage = image
     const previewTitle = title
@@ -339,15 +632,21 @@ const photoCount = photos.length
     const previewBackdrop = backdrop
     const previewOpenOriginalLink = openOriginalLink
 
-    const items: PhotoPreviewItem[] = triggers.map((trigger) => ({
-      src: trigger.dataset.photoSrc ?? '',
-      alt: trigger.dataset.photoAlt ?? '',
-      title: trigger.dataset.photoTitle ?? '',
-    }))
+    const items: PhotoPreviewItem[] = triggers.map((trigger) => {
+      const rawTitle = trigger.dataset.photoTitle ?? ''
+      return {
+        src: trigger.dataset.photoSrc ?? '',
+        alt: trigger.dataset.photoAlt ?? '',
+        title: rawTitle,
+        commentPath: `/photos/${slugifyForPath(rawTitle)}`,
+      }
+    })
 
     let currentIndex = -1
     let lastTrigger: HTMLButtonElement | null = null
     let renderToken = 0
+    let commentsPath: string | null = null
+    let commentsLoading = false
     const controller = new AbortController()
     const { signal } = controller
 
@@ -361,6 +660,59 @@ const photoCount = photos.length
         : 'false'
       previewPrevButton.disabled = disabled
       previewNextButton.disabled = disabled
+    }
+
+    async function mountComments(item: PhotoPreviewItem) {
+      if (!commentsRoot) return
+      if (commentsPath === item.commentPath) return
+
+      const serverUrl = commentsRoot.dataset.serverUrl?.trim()
+      const scriptUrl = commentsRoot.dataset.scriptUrl?.trim()
+      const lang = commentsRoot.dataset.lang?.trim()
+      if (!serverUrl || !scriptUrl) return
+
+      if (commentsLoading) return
+      commentsLoading = true
+      commentsPath = item.commentPath
+      commentsRoot.innerHTML =
+        '<p class="text-sm text-white/60">评论加载中……</p>'
+
+      try {
+        await ensureTwikooScript(scriptUrl)
+        if (commentsPath !== item.commentPath) return
+        commentsRoot.innerHTML = ''
+        await previewWindow.twikoo!.init({
+          envId: serverUrl,
+          el: commentsRoot,
+          path: item.commentPath,
+          lang,
+          pageTitle: item.title,
+        })
+      } catch (error) {
+        console.error('[photos] 评论加载失败：', error)
+        commentsRoot.innerHTML =
+          '<p class="text-sm text-red-300">评论加载失败，请稍后再试。</p>'
+        commentsPath = null
+      } finally {
+        commentsLoading = false
+      }
+    }
+
+    function openCommentsDrawer() {
+      if (!commentsDrawer) return
+      commentsDrawer.dataset.open = 'true'
+      commentsDrawer.setAttribute('aria-hidden', 'false')
+      const item = items[currentIndex]
+      if (item) {
+        if (commentsTitle) commentsTitle.textContent = item.title || '评论'
+        void mountComments(item)
+      }
+    }
+
+    function closeCommentsDrawer() {
+      if (!commentsDrawer) return
+      commentsDrawer.dataset.open = 'false'
+      commentsDrawer.setAttribute('aria-hidden', 'true')
     }
 
     function render(index: number) {
@@ -381,6 +733,11 @@ const photoCount = photos.length
         previewCounter.textContent = `${normalizedIndex + 1} / ${items.length}`
         previewOpenOriginalLink.href = item.src
         syncNavState()
+
+        if (commentsDrawer?.dataset.open === 'true') {
+          if (commentsTitle) commentsTitle.textContent = item.title || '评论'
+          void mountComments(item)
+        }
 
         window.requestAnimationFrame(() => {
           if (token !== renderToken) return
@@ -412,6 +769,7 @@ const photoCount = photos.length
     }
 
     function close() {
+      closeCommentsDrawer()
       previewRoot.setAttribute('data-open', 'false')
       previewRoot.setAttribute('aria-hidden', 'true')
       document.documentElement.removeAttribute('data-photo-preview-open')
@@ -440,6 +798,21 @@ const photoCount = photos.length
     previewBackdrop.addEventListener('click', close, { signal })
     previewPrevButton.addEventListener('click', () => move(-1), { signal })
     previewNextButton.addEventListener('click', () => move(1), { signal })
+
+    commentsToggle?.addEventListener(
+      'click',
+      () => {
+        if (!commentsDrawer) return
+        if (commentsDrawer.dataset.open === 'true') {
+          closeCommentsDrawer()
+        } else {
+          openCommentsDrawer()
+        }
+      },
+      { signal },
+    )
+    commentsClose?.addEventListener('click', closeCommentsDrawer, { signal })
+
     previewRoot.addEventListener(
       'click',
       (event) => {
@@ -458,7 +831,11 @@ const photoCount = photos.length
 
         if (event.key === 'Escape') {
           event.preventDefault()
-          close()
+          if (commentsDrawer?.dataset.open === 'true') {
+            closeCommentsDrawer()
+          } else {
+            close()
+          }
           return
         }
 
@@ -483,6 +860,10 @@ const photoCount = photos.length
       previewRoot.setAttribute('aria-hidden', 'true')
       previewImage.dataset.state = 'ready'
       previewImage.removeAttribute('src')
+      if (commentsDrawer) {
+        commentsDrawer.dataset.open = 'false'
+        commentsDrawer.setAttribute('aria-hidden', 'true')
+      }
       document.documentElement.removeAttribute('data-photo-preview-open')
     }
   }

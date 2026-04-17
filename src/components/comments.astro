@@ -54,6 +54,28 @@ const commentsEnabled = COMMENTS.enabled && Boolean(COMMENTS.serverUrl.trim())
   )
 }
 
+<style is:global>
+  /* 收紧 Twikoo 默认留白：去掉评论列表的最小高度，避免空评论时底部撑出大片空白 */
+  [data-comments-root] .tk-comments-container {
+    min-height: 0;
+  }
+
+  [data-comments-root] .tk-comments-no {
+    flex: none;
+    justify-content: flex-start;
+    padding: 0.75rem 0;
+    font-size: 0.875rem;
+  }
+
+  [data-comments-root] .tk-submit {
+    margin-top: 0.5rem;
+  }
+
+  [data-comments-root] .tk-extras {
+    margin-top: 0.25rem;
+  }
+</style>
+
 <script>
   type TwikooClient = {
     init: (options: {
