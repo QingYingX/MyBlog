@@ -18,6 +18,8 @@
 - 集成 Expressive Code、Shiki 和 KaTeX，适合技术写作。
 - 自带深浅色主题切换和 Astro View Transitions 页面过渡。
 - 支持桌面端鼠标跟随小圆点效果，可在配置中一键开关。
+- 内置 Twikoo 评论集成，支持懒加载、按文章关闭。
+- 自带照片墙页面，方便展示静态图片集合。
 - 基于 Tailwind CSS 4 和一组轻量 UI 组件，方便继续定制。
 
 ## 技术栈
@@ -142,9 +144,9 @@ docker run -d --name MyBlog -p 39393:39393 --restart unless-stopped myblog
 
 ## 站点配置
 
-项目里大多数“站点层面的调节项”都集中在 `src/config.ts`，日常修改时优先看这个文件。
+项目里大多数"站点层面的调节项"都集中在 `src/config.ts`，日常修改时优先看这个文件。
 
-当前主要配置项包括：
+当前主要配置项：
 
 | 配置项                       | 说明                                                         |
 | ---------------------------- | ------------------------------------------------------------ |
@@ -154,6 +156,8 @@ docker run -d --name MyBlog -p 39393:39393 --restart unless-stopped myblog
 | `THEME_TOGGLE.followPointer` | 主题切换圆形动效是否跟随鼠标位置                             |
 | `CURSOR.enabled`             | 是否启用桌面端鼠标跟随小圆点                                 |
 | `CURSOR.lag`                 | 鼠标圆点的跟随阻尼，值越大越跟手                             |
+| `COMMENTS`                   | 评论系统（Twikoo）开关、服务地址、脚本/样式地址、懒加载      |
+| `ICON_MAP`                   | 社交字段名称和图标的映射关系                                 |
 
 例如，关闭鼠标跟随圆点可以这样改：
 
@@ -163,6 +167,28 @@ export const CURSOR = {
   lag: 0.22,
 } as const
 ```
+
+### 评论（Twikoo）
+
+评论使用自部署的 [Twikoo](https://twikoo.js.org/)，在 `src/config.ts` 的 `COMMENTS` 中配置：
+
+- `enabled`：全站评论总开关，关掉后不会加载评论脚本和样式。
+- `defaultEnabled`：文章默认是否开启评论，可在单篇 frontmatter 用 `comments: false` 覆盖。
+- `serverUrl`：Twikoo 后端地址，建议使用独立 HTTPS 域名（例如 `https://twikoo.example.com`），避免混合内容和跨域问题。
+- `scriptUrl` / `styleUrl`：Twikoo 前端脚本与样式，可替换为自己的 CDN。样式在全局 `<head>` 中加载，保证 Astro View Transitions 切页后不丢失。
+- `lazyLoad`：是否等评论区进入视口后再初始化。
+
+Twikoo 后台的"安全域名"需要把博客域名加进去，否则会被拒绝跨域。
+
+### 其他常改的位置
+
+- `src/content.config.ts`：内容集合 schema，用来约束文章、作者、项目的 frontmatter 结构。
+- `astro.config.ts`：Astro 插件、开发端口、站点域名、`allowedHosts`、Markdown 处理管线。
+- `src/styles/global.css`：主题色、字体变量和基础样式。
+- `src/styles/typography.css`：文章排版样式。
+- `src/pages/index.astro`：首页文案与首页结构。
+- `src/pages/about.astro`：关于页内容与项目展示区。
+- `src/pages/photos.astro`：照片墙页面。
 
 ## 内容管理
 
@@ -201,6 +227,7 @@ draft: false
 | `image`       | `image`    | 否       | 文章封面           |
 | `tags`        | `string[]` | 否       | 标签列表           |
 | `authors`     | `string[]` | 否       | 作者 id 列表       |
+| `comments`    | `boolean`  | 否       | 覆盖该篇是否开启评论 |
 | `draft`       | `boolean`  | 否       | 是否草稿           |
 
 ### 子文章
@@ -284,26 +311,6 @@ src/content/projects/
 
 同一目录下被标记为主项目的条目会优先展示，然后再按开始时间倒序排序。
 
-## 站点配置
-
-以下文件是接手这个项目后最常改的几个地方：
-
-- `src/config.ts`：站点标题、描述、导航、社交链接、分页数量、主题切换配置。
-- `src/content.config.ts`：内容集合 schema，用来约束文章、作者、项目的 frontmatter 结构。
-- `astro.config.ts`：Astro 插件、开发端口、Markdown 处理、站点域名。
-- `src/styles/global.css`：主题色、字体变量和基础样式。
-- `src/styles/typography.css`：文章排版样式。
-- `src/pages/index.astro`：首页文案与首页结构。
-- `src/pages/about.astro`：关于页内容与项目展示区。
-
-如果你只是在找“平时最常改的站点配置”，可以优先看 `src/config.ts`。当前集中在这里的主要配置有：
-
-- `SITE`：站点标题、描述、域名、默认作者、语言、首页精选数量、分页大小。
-- `NAV_LINKS`：顶部导航。
-- `SOCIAL_LINKS`：页脚社交链接。
-- `THEME_TOGGLE.followPointer`：主题切换动画是否跟随鼠标移动，`false` 时会锁定在按钮中心。
-- `ICON_MAP`：社交字段名称和图标的映射关系。
-
 ## 部署提醒
 
 如果你要把这个项目改成自己的正式站点，至少同步检查下面两处：
@@ -318,6 +325,8 @@ src/content/projects/
 - `astro.config.ts` 中的 `server.port`
 - `Dockerfile` 中的 `EXPOSE`
 - `docker-compose.yml` 中的 `ports`
+
+如果通过反向代理访问开发/预览服务（例如使用自己的域名访问 `npm run dev`），需要把域名加入 `astro.config.ts` 的 `server.allowedHosts`，否则会被 Vite 以 "Blocked request" 拒绝。
 
 如果你准备部署到带子路径的站点，例如 `https://username.github.io/repo-name/` 这种 GitHub Pages 项目页，还需要额外检查 Astro 的 `base` 配置以及站内绝对路径资源是否匹配。
 

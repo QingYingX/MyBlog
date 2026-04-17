@@ -18,11 +18,11 @@ const parentId = isCurrentSubpost ? getParentId(currentPostId) : currentPostId
   sections.length > 0 && (
     <div
       id="toc-sidebar-container"
-      class="sticky top-20 col-start-1 row-span-1 mr-8 ml-auto hidden h-[calc(100vh-5rem)] max-w-md xl:block"
+      class="sticky top-24 col-start-1 row-span-1 mr-8 ml-auto hidden max-w-md self-start xl:block"
     >
       <ScrollArea
         client:load
-        className="flex max-h-[calc(100vh-8rem)] flex-col overflow-y-auto"
+        className="flex max-h-[calc(100dvh-7rem)] flex-col overflow-y-auto"
         type="hover"
         data-toc-scroll-area
       >
@@ -144,6 +144,18 @@ const parentId = isCurrentSubpost ? getParentId(currentPostId) : currentPostId
 
 <script>
   const HEADER_OFFSET = 150
+  const resolveScrollBehavior = (): ScrollBehavior =>
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      ? 'auto'
+      : 'smooth'
+
+  const getAnchorTarget = (href: string) => {
+    if (href === '#') {
+      return document.getElementById('post-title')
+    }
+
+    return document.getElementById(decodeURIComponent(href.slice(1)))
+  }
 
   class TOCState {
     links: NodeListOf<Element> = document.querySelectorAll(
@@ -154,6 +166,7 @@ const parentId = isCurrentSubpost ? getParentId(currentPostId) : currentPostId
     regions: { id: string; start: number; end: number }[] = []
     scrollArea: HTMLElement | null = null
     tocScrollArea: HTMLElement | null = null
+    container: HTMLElement | null = null
 
     reset() {
       this.links = document.querySelectorAll(
@@ -163,6 +176,7 @@ const parentId = isCurrentSubpost ? getParentId(currentPostId) : currentPostId
       this.headings = []
       this.regions = []
       const tocContainer = document.getElementById('toc-sidebar-container')
+      this.container = tocContainer
       this.scrollArea =
         tocContainer?.querySelector('[data-radix-scroll-area-viewport]') || null
       this.tocScrollArea =
@@ -296,6 +310,37 @@ const parentId = isCurrentSubpost ? getParentId(currentPostId) : currentPostId
   }
 
   class TOCController {
+    static handleLinkClick(event: MouseEvent) {
+      const target = event.target
+      if (!(target instanceof Element)) return
+
+      const link = target.closest('a[href]')
+      if (!(link instanceof HTMLAnchorElement)) return
+
+      const href = link.getAttribute('href') ?? ''
+      if (!href.startsWith('#')) return
+
+      const anchorTarget = getAnchorTarget(href)
+      if (!anchorTarget) return
+
+      event.preventDefault()
+      anchorTarget.scrollIntoView({
+        behavior: resolveScrollBehavior(),
+        block: 'start',
+      })
+
+      if (href === '#') {
+        history.replaceState(
+          null,
+          '',
+          `${window.location.pathname}${window.location.search}`,
+        )
+        return
+      }
+
+      history.replaceState(null, '', href)
+    }
+
     static handleScroll() {
       const newActiveIds = HeadingRegions.getVisibleIds()
 
@@ -334,6 +379,7 @@ const parentId = isCurrentSubpost ? getParentId(currentPostId) : currentPostId
       const options = { passive: true }
       window.addEventListener('scroll', this.handleScroll, options)
       window.addEventListener('resize', this.handleResize, options)
+      state.container?.addEventListener('click', this.handleLinkClick)
       state.scrollArea?.addEventListener(
         'scroll',
         this.handleTOCScroll,
@@ -344,6 +390,7 @@ const parentId = isCurrentSubpost ? getParentId(currentPostId) : currentPostId
     static cleanup() {
       window.removeEventListener('scroll', this.handleScroll)
       window.removeEventListener('resize', this.handleResize)
+      state.container?.removeEventListener('click', this.handleLinkClick)
       state.scrollArea?.removeEventListener('scroll', this.handleTOCScroll)
 
       Object.assign(state, {
@@ -352,6 +399,7 @@ const parentId = isCurrentSubpost ? getParentId(currentPostId) : currentPostId
         regions: [],
         scrollArea: null,
         tocScrollArea: null,
+        container: null,
       })
     }
   }

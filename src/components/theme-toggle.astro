@@ -45,6 +45,7 @@ import { Icon } from 'astro-icon/components'
   const THEME_TRANSITION_DURATION = 820
   const THEME_POINTER_FOLLOW = 0.18
   const THEME_SNAPSHOT_ATTRIBUTE = 'data-theme-transition-snapshot'
+  const THEME_ACTIVE_ATTRIBUTE = 'data-theme-transition-active'
   const SHOULD_FOLLOW_POINTER = themeToggleFollowPointer
 
   const themeWindow = window
@@ -80,9 +81,11 @@ import { Icon } from 'astro-icon/components'
       }
 
       themeWindow.__themeTransitionRunning = false
+      document.documentElement.removeAttribute(THEME_ACTIVE_ATTRIBUTE)
       cleanup()
     }
 
+    document.documentElement.setAttribute(THEME_ACTIVE_ATTRIBUTE, 'true')
     themeWindow.__themeTransitionCleanup = finalize
     return finalize
   }
@@ -213,6 +216,9 @@ import { Icon } from 'astro-icon/components'
     snapshotContent.style.width = '100%'
     snapshotContent.querySelectorAll('details[name]').forEach((detail) => {
       detail.removeAttribute('name')
+    })
+    snapshotContent.querySelectorAll('[data-cursor]').forEach((cursor) => {
+      cursor.remove()
     })
     snapshot.append(snapshotContent)
 

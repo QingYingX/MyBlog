@@ -98,6 +98,18 @@ const { headings } = Astro.props
   const HEADER_OFFSET = 102 + 36
   const PROGRESS_CIRCLE_RADIUS = 10
   const PROGRESS_CIRCLE_CIRCUMFERENCE = 2 * Math.PI * PROGRESS_CIRCLE_RADIUS
+  const resolveScrollBehavior = (): ScrollBehavior =>
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      ? 'auto'
+      : 'smooth'
+
+  const getAnchorTarget = (href: string) => {
+    if (href === '#') {
+      return document.getElementById('post-title')
+    }
+
+    return document.getElementById(decodeURIComponent(href.slice(1)))
+  }
 
   class MobileTOCState {
     progressCircle: HTMLElement | null = null
@@ -287,27 +299,25 @@ const { headings } = Astro.props
     static setupInteraction() {
       if (!state.listElement) return
 
-      state.listElement.querySelectorAll('.mobile-toc-item').forEach((item) => {
-        item.addEventListener('click', () => {
-          if (state.detailsElement) state.detailsElement.open = false
-        })
-      })
-
       if (state.scrollArea) {
         state.scrollArea.addEventListener(
           'scroll',
-          () => TOCHeaderScrollMask.update(),
+          MobileTOCController.handleTOCScroll,
           { passive: true },
         )
       }
 
       if (state.detailsElement) {
-        state.detailsElement.addEventListener('toggle', () => {
-          if (state.detailsElement?.open) {
-            setTimeout(TOCHeaderScrollMask.update, 100)
-          }
-        })
+        state.detailsElement.addEventListener(
+          'toggle',
+          MobileTOCController.handleDetailsToggle,
+        )
       }
+
+      state.listElement.addEventListener(
+        'click',
+        MobileTOCController.handleLinkClick,
+      )
     }
   }
 
@@ -330,6 +340,51 @@ const { headings } = Astro.props
   }
 
   class MobileTOCController {
+    static handleLinkClick(event: MouseEvent) {
+      const target = event.target
+      if (!(target instanceof Element)) return
+
+      const link = target.closest('a[href]')
+      if (!(link instanceof HTMLAnchorElement)) return
+
+      const href = link.getAttribute('href') ?? ''
+      if (!href.startsWith('#')) return
+
+      const anchorTarget = getAnchorTarget(href)
+      if (!anchorTarget) return
+
+      event.preventDefault()
+      anchorTarget.scrollIntoView({
+        behavior: resolveScrollBehavior(),
+        block: 'start',
+      })
+
+      if (state.detailsElement) {
+        state.detailsElement.open = false
+      }
+
+      if (href === '#') {
+        history.replaceState(
+          null,
+          '',
+          `${window.location.pathname}${window.location.search}`,
+        )
+        return
+      }
+
+      history.replaceState(null, '', href)
+    }
+
+    static handleTOCScroll() {
+      TOCHeaderScrollMask.update()
+    }
+
+    static handleDetailsToggle() {
+      if (state.detailsElement?.open) {
+        setTimeout(TOCHeaderScrollMask.update, 100)
+      }
+    }
+
     static handleScroll() {
       const newActiveIds = HeadingRegions.getVisibleIds()
 
@@ -381,6 +436,12 @@ const { headings } = Astro.props
       window.removeEventListener('scroll', this.handleScroll)
       window.removeEventListener('scroll', ProgressCircle.update)
       window.removeEventListener('resize', this.handleResize)
+      state.listElement?.removeEventListener('click', this.handleLinkClick)
+      state.scrollArea?.removeEventListener('scroll', this.handleTOCScroll)
+      state.detailsElement?.removeEventListener(
+        'toggle',
+        this.handleDetailsToggle,
+      )
       state.activeIds = []
       state.headings = []
       state.regions = []

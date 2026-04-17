@@ -119,6 +119,14 @@
     -webkit-backdrop-filter: none !important;
   }
 
+  :root[data-theme-transition-active='true'] [data-cursor] {
+    opacity: 0 !important;
+  }
+
+  [data-theme-transition-snapshot] [data-cursor] {
+    display: none !important;
+  }
+
   [data-theme-transition-snapshot] {
     position: fixed;
     inset: 0;
