@@ -165,12 +165,15 @@ const commentsConfig = commentsEnabled
         </div>
       </div>
 
-      <div class="pointer-events-none flex items-center gap-2">
+      <div
+        class="pointer-events-none flex items-center gap-2"
+        data-photo-preview-toolbar-right
+      >
         {
           commentsEnabled && (
             <button
               type="button"
-              class="pointer-events-auto inline-flex items-center gap-1.5 rounded-full border border-white/16 bg-black/30 px-3 py-2 text-xs text-white/82 transition-colors hover:bg-black/44 hover:text-white sm:text-sm"
+              class="pointer-events-auto inline-flex items-center gap-1.5 rounded-full border border-white/16 bg-black/30 px-3 py-2 text-xs text-white/82 transition-colors hover:bg-black/44 hover:text-white focus:outline-none focus-visible:outline-none sm:text-sm"
               data-photo-preview-comments-toggle
               data-photo-preview-safe
               aria-label="查看本张图片的评论"
@@ -227,6 +230,7 @@ const commentsConfig = commentsEnabled
 
     <div
       class="relative flex min-h-screen items-center justify-center px-4 py-20 sm:px-8"
+      data-photo-preview-stage-wrap
     >
       <figure
         class="relative flex max-h-[calc(100vh-7rem)] w-full max-w-[min(1100px,calc(100vw-7rem))] items-center justify-center"
@@ -346,6 +350,46 @@ const commentsConfig = commentsEnabled
   [data-photo-preview-comments][data-open='true'] {
     transform: translateX(0);
     pointer-events: auto;
+  }
+
+  [data-photo-preview] {
+    --drawer-inset: 0px;
+  }
+
+  [data-photo-preview][data-comments-open='true'] {
+    --drawer-inset: min(520px, 92vw);
+  }
+
+  [data-photo-preview-stage-wrap] {
+    padding-right: calc(var(--drawer-inset));
+    transition: padding-right 300ms ease;
+  }
+
+  [data-photo-preview][data-comments-open='true'] [data-photo-preview-next] {
+    right: calc(1rem + var(--drawer-inset));
+  }
+
+  @media (min-width: 640px) {
+    [data-photo-preview][data-comments-open='true'] [data-photo-preview-next] {
+      right: calc(1.5rem + var(--drawer-inset));
+    }
+  }
+
+  [data-photo-preview-toolbar-right] {
+    transform: translateX(0);
+    transition: transform 300ms ease;
+  }
+
+  [data-photo-preview][data-comments-open='true']
+    [data-photo-preview-toolbar-right] {
+    transform: translateX(calc(var(--drawer-inset) * -1));
+  }
+
+  [data-photo-preview-next] {
+    transition:
+      right 300ms ease,
+      background-color 160ms ease,
+      color 160ms ease;
   }
 
   .twikoo-photo-comments {
@@ -702,6 +746,7 @@ const commentsConfig = commentsEnabled
       if (!commentsDrawer) return
       commentsDrawer.dataset.open = 'true'
       commentsDrawer.setAttribute('aria-hidden', 'false')
+      previewRoot.dataset.commentsOpen = 'true'
       const item = items[currentIndex]
       if (item) {
         if (commentsTitle) commentsTitle.textContent = item.title || '评论'
@@ -713,6 +758,7 @@ const commentsConfig = commentsEnabled
       if (!commentsDrawer) return
       commentsDrawer.dataset.open = 'false'
       commentsDrawer.setAttribute('aria-hidden', 'true')
+      previewRoot.dataset.commentsOpen = 'false'
     }
 
     function render(index: number) {
@@ -795,7 +841,17 @@ const commentsConfig = commentsEnabled
     })
 
     previewCloseButton.addEventListener('click', close, { signal })
-    previewBackdrop.addEventListener('click', close, { signal })
+    previewBackdrop.addEventListener(
+      'click',
+      () => {
+        if (commentsDrawer?.dataset.open === 'true') {
+          closeCommentsDrawer()
+          return
+        }
+        close()
+      },
+      { signal },
+    )
     previewPrevButton.addEventListener('click', () => move(-1), { signal })
     previewNextButton.addEventListener('click', () => move(1), { signal })
 
@@ -819,6 +875,10 @@ const commentsConfig = commentsEnabled
         const target = event.target
         if (!(target instanceof HTMLElement)) return
         if (target.closest('[data-photo-preview-safe]')) return
+        if (commentsDrawer?.dataset.open === 'true') {
+          closeCommentsDrawer()
+          return
+        }
         close()
       },
       { signal },
@@ -864,6 +924,7 @@ const commentsConfig = commentsEnabled
         commentsDrawer.dataset.open = 'false'
         commentsDrawer.setAttribute('aria-hidden', 'true')
       }
+      previewRoot.dataset.commentsOpen = 'false'
       document.documentElement.removeAttribute('data-photo-preview-open')
     }
   }
