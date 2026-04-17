@@ -122,23 +122,32 @@ docker run -d --name MyBlog -p 39393:39393 --restart unless-stopped myblog
 
 ```text
 .
-├─ public/                  # favicon、字体和静态资源
+├─ public/
+│  ├─ fonts/                # 自托管字体
+│  ├─ photos/               # 照片墙图片
+│  ├─ projects/             # 项目卡片封面
+│  ├─ static/               # 预览图、分享图等
+│  └─ favicon.* / site.webmanifest  # 站点图标与 PWA manifest
 ├─ src/
-│  ├─ components/           # 页面组件与 UI 组件
+│  ├─ components/           # 页面组件与 UI 组件（ui/ 下为轻量组件）
 │  ├─ content/
 │  │  ├─ authors/           # 作者资料
 │  │  ├─ blog/              # 博客文章与子文章
 │  │  └─ projects/          # 项目卡片内容
 │  ├─ layouts/              # 页面布局
 │  ├─ lib/                  # 数据处理与工具函数
-│  ├─ pages/                # 路由页面
+│  ├─ pages/                # 路由页面（含 /photos、/tags、/authors、/blog 等）
 │  ├─ styles/               # 全局样式与排版样式
-│  ├─ config.ts             # 站点信息、导航、主题切换、鼠标效果等统一配置
-│  └─ content.config.ts     # 内容集合 schema
-├─ astro.config.ts          # Astro 配置
+│  ├─ config.ts             # 站点信息、导航、主题切换、评论等统一配置
+│  ├─ content.config.ts     # 内容集合 schema
+│  ├─ types.ts              # 公共类型定义
+│  └─ env.d.ts              # Astro 环境类型
+├─ astro.config.ts          # Astro 配置（端口、allowedHosts、Markdown 管线）
 ├─ Dockerfile               # Docker 镜像构建配置
 ├─ docker-compose.yml       # Docker Compose 运行配置
+├─ components.json          # UI 组件配置
 ├─ tsconfig.json            # TypeScript 配置
+├─ CLAUDE.md                # 给 Claude Code 的项目说明
 └─ package.json             # 脚本与依赖
 ```
 
