@@ -2,24 +2,105 @@
 import BlogCard from '@/components/blog-card.astro'
 import Link from '@/components/link.astro'
 import PageHead from '@/components/page-head.astro'
+import SocialIcons from '@/components/social-icons.astro'
 import { buttonVariants } from '@/components/ui/button'
-import { SITE } from '@/config'
+import { SITE, SOCIAL_LINKS } from '@/config'
+import { getAllPosts, getAllTags, getRecentPosts } from '@/lib/data-utils'
 import Layout from '@/layouts/layout.astro'
-import { getRecentPosts } from '@/lib/data-utils'
+import { getEntry } from 'astro:content'
 import { Icon } from 'astro-icon/components'
 
-const blog = await getRecentPosts(SITE.featuredPostCount)
+const recentPosts = await getRecentPosts(SITE.featuredPostCount)
+const allPosts = await getAllPosts()
+const allTags = await getAllTags()
+const author = await getEntry('authors', 'qingyingx')
+
+const earliestPost = allPosts.reduce<Date | null>((earliest, post) => {
+  if (!earliest || post.data.date < earliest) return post.data.date
+  return earliest
+}, null)
+const siteDays = earliestPost
+  ? Math.max(
+      1,
+      Math.ceil(
+        (Date.now() - earliestPost.valueOf()) / (1000 * 60 * 60 * 24),
+      ),
+    )
+  : 1
+
+const stats = [
+  { label: '文章', value: allPosts.length },
+  { label: '标签', value: allTags.size },
+  { label: '建站', value: `${siteDays} 天` },
+]
 ---
 
 <Layout class="max-w-3xl">
   <PageHead slot="head" title="首页" />
-  <section class="overflow-hidden rounded-lg border">
-    <div class="flex flex-col space-y-1.5 p-6">
-      <h3 class="text-3xl leading-none font-medium">QingYingX's Blog</h3>
+
+  <section class="overflow-hidden rounded-2xl border">
+    <div
+      class="flex flex-col gap-6 p-6 sm:flex-row sm:items-center sm:gap-8 sm:p-8"
+    >
+      {
+        author && (
+          <img
+            src={author.data.avatar}
+            alt={author.data.name}
+            width={112}
+            height={112}
+            class="ring-border size-24 shrink-0 rounded-full object-cover ring-2 sm:size-28"
+            loading="eager"
+          />
+        )
+      }
+
+      <div class="flex min-w-0 flex-1 flex-col gap-3">
+        <div class="flex flex-col gap-1">
+          <p
+            class="text-muted-foreground text-xs font-medium tracking-[0.24em] uppercase"
+          >
+            {SITE.title}
+          </p>
+          <h1 class="text-3xl leading-none font-medium sm:text-4xl">
+            {author?.data.name ?? SITE.author}
+          </h1>
+          <p class="text-muted-foreground mt-1 text-sm">
+            {author?.data.bio ?? '一名普普通通的学生'}
+          </p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+          <SocialIcons links={SOCIAL_LINKS} />
+          <Link
+            href="/about"
+            class={buttonVariants({ variant: 'outline', size: 'sm' }) +
+              ' group'}
+          >
+            了解更多
+            <span class="ml-1 transition-transform group-hover:translate-x-0.5">
+              &rarr;
+            </span>
+          </Link>
+        </div>
+      </div>
     </div>
-    <div class="px-6 pb-6">
-      <p class="text-muted-foreground text-sm">一名普普通通的学生</p>
+
+    <div
+      class="grid grid-cols-3 divide-x border-t text-center text-sm"
+    >
+      {
+        stats.map((stat) => (
+          <div class="flex flex-col gap-0.5 px-4 py-3">
+            <span class="text-foreground text-lg font-medium tabular-nums">
+              {stat.value}
+            </span>
+            <span class="text-muted-foreground text-xs">{stat.label}</span>
+          </div>
+        ))
+      }
     </div>
+
     <div
       class="bg-muted/40 text-muted-foreground flex items-start gap-2 border-t px-6 py-3 text-xs"
       data-hitokoto
@@ -31,15 +112,28 @@ const blog = await getRecentPosts(SITE.featuredPostCount)
         <p
           class="text-muted-foreground/80 mt-1 text-right empty:hidden"
           data-hitokoto-from
-        ></p>
+        >
+        </p>
       </div>
     </div>
   </section>
+
   <section class="flex flex-col gap-y-4">
-    <h2 class="text-2xl font-medium">最新文章</h2>
+    <div class="flex items-end justify-between gap-2">
+      <h2 class="text-2xl font-medium">最新文章</h2>
+      <Link
+        href="/blog"
+        class="text-muted-foreground hover:text-foreground group inline-flex items-center gap-1 text-sm transition-colors"
+      >
+        查看全部
+        <span class="transition-transform group-hover:translate-x-0.5">
+          &rarr;
+        </span>
+      </Link>
+    </div>
     <ul class="flex flex-col gap-y-4">
       {
-        blog.map((post) => (
+        recentPosts.map((post) => (
           <li>
             <BlogCard entry={post} />
           </li>
@@ -51,10 +145,10 @@ const blog = await getRecentPosts(SITE.featuredPostCount)
         href="/blog"
         class={buttonVariants({ variant: 'ghost' }) + ' group'}
       >
-        来看看清影的其他文章吧~ <span
-          class="ml-1.5 transition-transform group-hover:translate-x-1"
-          >&rarr;</span
-        >
+        来看看清影的其他文章吧~
+        <span class="ml-1.5 transition-transform group-hover:translate-x-1">
+          &rarr;
+        </span>
       </Link>
     </div>
   </section>
