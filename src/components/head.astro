@@ -1,5 +1,5 @@
 ---
-import { SITE } from '@/config'
+import { COMMENTS, SITE } from '@/config'
 import { resolveSiteUrl } from '@/lib/site'
 import { ClientRouter } from 'astro:transitions'
 import Favicons from './favicons.astro'
@@ -58,6 +58,17 @@ const rssUrl = resolveSiteUrl('/rss.xml', { site: Astro.site, url: Astro.url })
     title={SITE.title}
     href={rssUrl}
   />
+  {
+    COMMENTS.enabled &&
+      COMMENTS.provider === 'twikoo' &&
+      COMMENTS.styleUrl.trim() && (
+        <link
+          rel="stylesheet"
+          href={COMMENTS.styleUrl}
+          crossorigin="anonymous"
+        />
+      )
+  }
 
   <Favicons />
   <ClientRouter />

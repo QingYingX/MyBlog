@@ -1,0 +1,238 @@
+---
+import { COMMENTS } from '@/config'
+
+type Props = {
+  path: string
+  title?: string
+}
+
+const { path, title } = Astro.props
+const commentsEnabled = COMMENTS.enabled && Boolean(COMMENTS.serverUrl.trim())
+---
+
+{
+  commentsEnabled && (
+    <section class="col-start-2 mt-4" aria-labelledby="comments-title">
+      <div class="bg-muted/20 rounded-2xl border p-5 sm:p-6">
+        <div class="mb-5 flex flex-col gap-1">
+          <p class="text-muted-foreground text-xs font-medium tracking-[0.24em] uppercase">
+            Comments
+          </p>
+          <h2 class="text-foreground text-2xl font-medium" id="comments-title">
+            评论
+          </h2>
+          <p class="text-muted-foreground text-sm leading-6">
+            欢迎留下你的想法，也可以继续和我交流这篇文章。
+          </p>
+        </div>
+
+        <div
+          data-comments-root
+          data-path={path}
+          data-title={title ?? ''}
+          data-provider={COMMENTS.provider}
+          data-server-url={COMMENTS.serverUrl}
+          data-script-url={COMMENTS.scriptUrl}
+          data-lang={COMMENTS.lang}
+          data-lazy-load={COMMENTS.lazyLoad ? 'true' : 'false'}
+        >
+          <div
+            class="text-muted-foreground bg-background/70 rounded-xl border px-4 py-3 text-sm"
+            data-comments-status
+          >
+            评论区准备中……
+          </div>
+        </div>
+
+        <noscript>
+          <p class="text-muted-foreground mt-4 text-sm">
+            需要开启 JavaScript 才能加载评论区。
+          </p>
+        </noscript>
+      </div>
+    </section>
+  )
+}
+
+<script>
+  type TwikooClient = {
+    init: (options: {
+      envId: string
+      el: HTMLElement
+      path?: string
+      lang?: string
+      pageTitle?: string
+    }) => Promise<unknown> | unknown
+  }
+
+  type CommentsWindow = Window &
+    typeof globalThis & {
+      twikoo?: TwikooClient
+      __twikooScriptPromise?: Promise<void>
+      __commentsInitialized?: boolean
+    }
+
+  const commentsWindow = window as CommentsWindow
+  const COMMENTS_SCRIPT_ID = 'twikoo-client-script'
+  const OBSERVER_MARGIN = '320px 0px'
+
+  function getCommentsRoot() {
+    const root = document.querySelector('[data-comments-root]')
+    return root instanceof HTMLElement ? root : null
+  }
+
+  function setStatus(
+    root: HTMLElement,
+    message: string,
+    tone: 'idle' | 'error',
+  ) {
+    const status = root.querySelector('[data-comments-status]')
+    if (!(status instanceof HTMLElement)) return
+
+    status.textContent = message
+    status.classList.toggle('text-destructive', tone === 'error')
+  }
+
+  async function ensureTwikooScript(scriptUrl: string) {
+    if (commentsWindow.twikoo) return
+    if (commentsWindow.__twikooScriptPromise) {
+      await commentsWindow.__twikooScriptPromise
+      return
+    }
+
+    commentsWindow.__twikooScriptPromise = new Promise<void>(
+      (resolve, reject) => {
+        const existingScript = document.getElementById(COMMENTS_SCRIPT_ID)
+
+        if (existingScript instanceof HTMLScriptElement) {
+          if (commentsWindow.twikoo) {
+            resolve()
+            return
+          }
+
+          existingScript.addEventListener('load', () => resolve(), {
+            once: true,
+          })
+          existingScript.addEventListener(
+            'error',
+            () => {
+              commentsWindow.__twikooScriptPromise = undefined
+              reject(new Error('Twikoo script failed to load.'))
+            },
+            { once: true },
+          )
+          return
+        }
+
+        const script = document.createElement('script')
+        script.id = COMMENTS_SCRIPT_ID
+        script.src = scriptUrl
+        script.async = true
+
+        script.addEventListener('load', () => resolve(), { once: true })
+        script.addEventListener(
+          'error',
+          () => {
+            commentsWindow.__twikooScriptPromise = undefined
+            script.remove()
+            reject(new Error('Twikoo script failed to load.'))
+          },
+          { once: true },
+        )
+
+        document.head.appendChild(script)
+      },
+    )
+
+    await commentsWindow.__twikooScriptPromise
+
+    if (!commentsWindow.twikoo) {
+      commentsWindow.__twikooScriptPromise = undefined
+      throw new Error('Twikoo client is unavailable after the script loaded.')
+    }
+  }
+
+  async function mountComments(root: HTMLElement) {
+    if (root.dataset.state === 'loading' || root.dataset.state === 'ready')
+      return
+
+    const provider = root.dataset.provider
+    const serverUrl = root.dataset.serverUrl?.trim()
+    const scriptUrl = root.dataset.scriptUrl?.trim()
+    const lang = root.dataset.lang?.trim()
+    const path = root.dataset.path?.trim()
+    const title = root.dataset.title?.trim()
+
+    if (provider !== 'twikoo' || !serverUrl || !scriptUrl) {
+      setStatus(root, '评论配置还没有准备好。', 'error')
+      root.dataset.state = 'error'
+      return
+    }
+
+    root.dataset.state = 'loading'
+    setStatus(root, '评论加载中……', 'idle')
+
+    try {
+      await ensureTwikooScript(scriptUrl)
+      if (!root.isConnected) return
+
+      root.innerHTML = ''
+
+      await commentsWindow.twikoo!.init({
+        envId: serverUrl,
+        el: root,
+        path,
+        lang,
+        pageTitle: title,
+      })
+
+      root.dataset.state = 'ready'
+    } catch (error) {
+      console.error('[comments] Failed to initialize comments:', error)
+      if (!root.isConnected) return
+
+      root.dataset.state = 'error'
+      root.innerHTML = `
+        <div class="text-destructive bg-background/70 rounded-xl border px-4 py-3 text-sm">
+          评论区加载失败了，请稍后再试。
+        </div>
+      `
+    }
+  }
+
+  function initComments() {
+    const root = getCommentsRoot()
+    if (!root) return
+
+    const shouldLazyLoad = root.dataset.lazyLoad === 'true'
+
+    if (!shouldLazyLoad || !('IntersectionObserver' in window)) {
+      void mountComments(root)
+      return
+    }
+
+    if (root.dataset.observing === 'true' || root.dataset.state === 'ready')
+      return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries
+        if (!entry?.isIntersecting) return
+
+        observer.disconnect()
+        root.dataset.observing = 'false'
+        void mountComments(root)
+      },
+      { rootMargin: OBSERVER_MARGIN },
+    )
+
+    root.dataset.observing = 'true'
+    observer.observe(root)
+  }
+
+  if (!commentsWindow.__commentsInitialized) {
+    commentsWindow.__commentsInitialized = true
+    document.addEventListener('astro:page-load', initComments)
+    document.addEventListener('astro:after-swap', initComments)
+  }
+</script>

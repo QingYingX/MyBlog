@@ -28,7 +28,7 @@ export default defineConfig({
   server: {
     port: 39393,
     host: true,
-    allowedHosts: ['blog.099311.xyz'],
+    allowedHosts: ['blog.099311.xyz', 'blogo.099311.xyz'],
   },
   devToolbar: {
     enabled: false,

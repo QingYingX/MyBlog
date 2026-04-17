@@ -8,6 +8,17 @@ export type Site = {
   postsPerPage: number
 }
 
+export type Comments = {
+  enabled: boolean
+  defaultEnabled: boolean
+  provider: 'twikoo'
+  serverUrl: string
+  scriptUrl: string
+  styleUrl: string
+  lang: string
+  lazyLoad: boolean
+}
+
 export type SocialLink = {
   href: string
   label: string

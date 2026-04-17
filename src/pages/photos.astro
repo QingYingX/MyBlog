@@ -1,0 +1,493 @@
+---
+import Breadcrumbs from '@/components/breadcrumbs.astro'
+import PageHead from '@/components/page-head.astro'
+import Layout from '@/layouts/layout.astro'
+import { Icon } from 'astro-icon/components'
+import { readdir } from 'node:fs/promises'
+import { basename, extname, resolve } from 'node:path'
+
+const PHOTO_EXTENSIONS = new Set([
+  '.png',
+  '.jpg',
+  '.jpeg',
+  '.webp',
+  '.avif',
+  '.gif',
+])
+
+async function getPhotoPaths(dir: string, prefix = ''): Promise<string[]> {
+  const entries = await readdir(dir, { withFileTypes: true }).catch(() => [])
+  const sortedEntries = [...entries].sort((a, b) =>
+    a.name.localeCompare(b.name, 'zh-CN', {
+      numeric: true,
+      sensitivity: 'base',
+    }),
+  )
+
+  const paths = await Promise.all(
+    sortedEntries.map(async (entry) => {
+      const nextPath = prefix ? `${prefix}/${entry.name}` : entry.name
+
+      if (entry.isDirectory()) {
+        return getPhotoPaths(resolve(dir, entry.name), nextPath)
+      }
+
+      if (!PHOTO_EXTENSIONS.has(extname(entry.name).toLowerCase())) {
+        return []
+      }
+
+      return [nextPath]
+    }),
+  )
+
+  return paths.flat()
+}
+
+const photoFiles = await getPhotoPaths(
+  resolve(process.cwd(), 'public', 'photos'),
+)
+const photos = photoFiles.map((filePath) => {
+  const fileName = filePath.split('/').at(-1) ?? filePath
+  const title = basename(fileName, extname(fileName))
+
+  return {
+    src: `/photos/${filePath.split('/').map(encodeURIComponent).join('/')}`,
+    alt: title,
+    title,
+  }
+})
+const photoCount = photos.length
+---
+
+<Layout class="max-w-5xl">
+  <PageHead slot="head" title="照片墙" />
+  <Breadcrumbs items={[{ label: '照片墙', icon: 'lucide:images' }]} />
+
+  <section class="flex flex-col gap-6">
+    <div class="space-y-3">
+      <h1 class="text-3xl font-semibold sm:text-4xl">照片墙</h1>
+      <div
+        class="text-muted-foreground flex flex-wrap items-center gap-x-4 gap-y-2 text-sm"
+      >
+        <span class="inline-flex items-center gap-2">
+          <Icon name="lucide:image" class="size-4" />
+          共 {photoCount} 张
+        </span>
+        <span class="inline-flex items-center gap-2">
+          <Icon name="lucide:gallery-vertical-end" class="size-4" />
+          原始比例瀑布流
+        </span>
+        <span class="inline-flex items-center gap-2">
+          <Icon name="lucide:expand" class="size-4" />
+          点击图片可预览
+        </span>
+      </div>
+    </div>
+
+    {
+      photoCount > 0 ? (
+        <div class="columns-1 gap-4 sm:columns-2 xl:columns-3" data-photo-wall>
+          {photos.map((photo, index) => (
+            <article class="group mb-4 inline-block w-full break-inside-avoid align-top">
+              <button
+                type="button"
+                class="bg-muted/20 ring-border/60 relative isolate block w-full cursor-pointer overflow-hidden rounded-2xl text-left shadow-[0_18px_40px_-28px_rgba(0,0,0,0.8)] ring-1 outline-none focus:outline-none focus-visible:outline-none"
+                data-photo-trigger
+                data-photo-index={index}
+                data-photo-src={photo.src}
+                data-photo-alt={photo.alt}
+                data-photo-title={photo.title}
+                aria-label={`预览图片 ${photo.title}`}
+              >
+                <img
+                  src={photo.src}
+                  alt={photo.alt}
+                  loading="lazy"
+                  class="block h-auto w-full [transform:translateZ(0)]"
+                />
+
+                <div class="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-start bg-linear-to-t from-black/68 via-black/14 to-transparent px-4 py-4 text-white">
+                  <span class="min-w-0 rounded-full bg-black/42 px-3 py-1 text-sm font-medium">
+                    <span class="block truncate">{photo.title}</span>
+                  </span>
+                </div>
+              </button>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <div class="text-muted-foreground bg-muted/15 rounded-2xl border px-6 py-10 text-center">
+          还没有读到可展示的图片。把照片放进 <code>public/photos</code>{' '}
+          后刷新页面就会出现。
+        </div>
+      )
+    }
+  </section>
+
+  <div
+    class="pointer-events-none fixed inset-0 z-[120] opacity-0 transition-opacity duration-200"
+    data-photo-preview
+    aria-hidden="true"
+    hidden
+  >
+    <div class="absolute inset-0 bg-black/86" data-photo-preview-backdrop></div>
+
+    <div
+      class="absolute inset-x-0 top-0 z-10 flex justify-between gap-3 px-4 py-4 sm:px-6"
+    >
+      <div class="pointer-events-none flex min-w-0">
+        <div
+          class="pointer-events-auto rounded-2xl bg-black/34 px-4 py-3 text-white backdrop-blur-sm"
+          data-photo-preview-safe
+        >
+          <div class="min-w-0">
+            <p
+              id="photo-preview-title"
+              class="truncate text-sm font-medium sm:text-base"
+              data-photo-preview-title
+            >
+            </p>
+            <p class="mt-1 text-xs text-white/68" data-photo-preview-counter>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="pointer-events-none flex items-center gap-2">
+        <a
+          href="#"
+          target="_blank"
+          rel="noreferrer"
+          class="pointer-events-auto inline-flex items-center gap-1.5 rounded-full border border-white/16 bg-black/30 px-3 py-2 text-xs text-white/82 transition-colors hover:bg-black/44 hover:text-white sm:text-sm"
+          data-photo-preview-open-original
+          data-photo-preview-safe
+        >
+          <Icon name="lucide:external-link" class="size-4" />
+          打开原图
+        </a>
+
+        <button
+          type="button"
+          class="pointer-events-auto inline-flex size-10 items-center justify-center rounded-full border border-white/16 bg-black/30 text-white/82 transition-colors hover:bg-black/44 hover:text-white"
+          data-photo-preview-close
+          data-photo-preview-safe
+          aria-label="关闭预览"
+        >
+          <Icon name="lucide:x" class="size-4" />
+        </button>
+      </div>
+    </div>
+
+    <button
+      type="button"
+      class="fixed top-1/2 left-4 z-20 inline-flex size-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/16 bg-black/28 text-white/82 transition-colors hover:bg-black/42 hover:text-white sm:left-6"
+      data-photo-preview-prev
+      data-photo-preview-safe
+      aria-label="上一张"
+    >
+      <Icon name="lucide:chevron-left" class="size-5" />
+    </button>
+
+    <button
+      type="button"
+      class="fixed top-1/2 right-4 z-20 inline-flex size-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/16 bg-black/28 text-white/82 transition-colors hover:bg-black/42 hover:text-white sm:right-6"
+      data-photo-preview-next
+      data-photo-preview-safe
+      aria-label="下一张"
+    >
+      <Icon name="lucide:chevron-right" class="size-5" />
+    </button>
+
+    <div
+      class="relative flex min-h-screen items-center justify-center px-4 py-20 sm:px-8"
+    >
+      <figure
+        class="relative flex max-h-[calc(100vh-7rem)] w-full max-w-[min(1100px,calc(100vw-7rem))] items-center justify-center"
+        data-photo-preview-stage
+        data-photo-preview-safe
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="photo-preview-title"
+      >
+        <img
+          src=""
+          alt=""
+          class="max-h-[calc(100vh-7rem)] w-auto max-w-full rounded-2xl object-contain shadow-[0_30px_80px_-32px_rgba(0,0,0,0.9)]"
+          data-photo-preview-image
+          data-state="ready"
+        />
+      </figure>
+    </div>
+  </div>
+</Layout>
+
+<style>
+  [data-photo-wall] {
+    column-fill: balance;
+  }
+
+  :global(html[data-photo-preview-open='true']) {
+    overflow: hidden;
+  }
+
+  [data-photo-preview][data-open='true'] {
+    pointer-events: auto;
+    opacity: 1;
+  }
+
+  [data-photo-preview][data-open='true'] [data-photo-preview-stage] {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+
+  [data-photo-preview-stage] {
+    transform: translateY(8px) scale(0.985);
+    opacity: 0;
+    transition:
+      transform 200ms ease,
+      opacity 200ms ease;
+  }
+
+  [data-photo-preview-image] {
+    opacity: 1;
+    transform: scale(1);
+    transition:
+      opacity 180ms ease,
+      transform 220ms ease;
+  }
+
+  [data-photo-preview-image][data-state='switching'] {
+    opacity: 0.24;
+    transform: scale(0.985);
+  }
+
+  [data-photo-preview-nav-disabled='true'] {
+    opacity: 0.35;
+    pointer-events: none;
+  }
+</style>
+
+<script>
+  type PhotoPreviewWindow = Window & {
+    __photoPreviewCleanup?: () => void
+  }
+
+  type PhotoPreviewItem = {
+    src: string
+    alt: string
+    title: string
+  }
+
+  function initPhotoPreview() {
+    const previewWindow = window as PhotoPreviewWindow
+    previewWindow.__photoPreviewCleanup?.()
+
+    const root = document.querySelector<HTMLElement>('[data-photo-preview]')
+    if (!root) return
+
+    const triggers = Array.from(
+      document.querySelectorAll('[data-photo-trigger]'),
+    ).filter(
+      (element): element is HTMLButtonElement =>
+        element instanceof HTMLButtonElement,
+    )
+
+    if (triggers.length === 0) return
+
+    const image = root.querySelector<HTMLImageElement>(
+      '[data-photo-preview-image]',
+    )
+    const title = root.querySelector<HTMLElement>('[data-photo-preview-title]')
+    const counter = root.querySelector<HTMLElement>(
+      '[data-photo-preview-counter]',
+    )
+    const closeButton = root.querySelector<HTMLButtonElement>(
+      '[data-photo-preview-close]',
+    )
+    const prevButton = root.querySelector<HTMLButtonElement>(
+      '[data-photo-preview-prev]',
+    )
+    const nextButton = root.querySelector<HTMLButtonElement>(
+      '[data-photo-preview-next]',
+    )
+    const backdrop = root.querySelector<HTMLElement>(
+      '[data-photo-preview-backdrop]',
+    )
+    const openOriginalLink = root.querySelector<HTMLAnchorElement>(
+      '[data-photo-preview-open-original]',
+    )
+    if (
+      !image ||
+      !title ||
+      !counter ||
+      !closeButton ||
+      !prevButton ||
+      !nextButton ||
+      !backdrop ||
+      !openOriginalLink
+    ) {
+      return
+    }
+
+    const previewRoot = root
+    const previewImage = image
+    const previewTitle = title
+    const previewCounter = counter
+    const previewCloseButton = closeButton
+    const previewPrevButton = prevButton
+    const previewNextButton = nextButton
+    const previewBackdrop = backdrop
+    const previewOpenOriginalLink = openOriginalLink
+
+    const items: PhotoPreviewItem[] = triggers.map((trigger) => ({
+      src: trigger.dataset.photoSrc ?? '',
+      alt: trigger.dataset.photoAlt ?? '',
+      title: trigger.dataset.photoTitle ?? '',
+    }))
+
+    let currentIndex = -1
+    let lastTrigger: HTMLButtonElement | null = null
+    let renderToken = 0
+    const controller = new AbortController()
+    const { signal } = controller
+
+    function syncNavState() {
+      const disabled = items.length <= 1
+      previewPrevButton.dataset.photoPreviewNavDisabled = disabled
+        ? 'true'
+        : 'false'
+      previewNextButton.dataset.photoPreviewNavDisabled = disabled
+        ? 'true'
+        : 'false'
+      previewPrevButton.disabled = disabled
+      previewNextButton.disabled = disabled
+    }
+
+    function render(index: number) {
+      const normalizedIndex =
+        ((index % items.length) + items.length) % items.length
+      const item = items[normalizedIndex]
+      const token = ++renderToken
+
+      previewImage.dataset.state = 'switching'
+
+      const apply = () => {
+        if (token !== renderToken) return
+
+        currentIndex = normalizedIndex
+        previewImage.src = item.src
+        previewImage.alt = item.alt
+        previewTitle.textContent = item.title
+        previewCounter.textContent = `${normalizedIndex + 1} / ${items.length}`
+        previewOpenOriginalLink.href = item.src
+        syncNavState()
+
+        window.requestAnimationFrame(() => {
+          if (token !== renderToken) return
+          previewImage.dataset.state = 'ready'
+        })
+      }
+
+      const preloadImage = new Image()
+      preloadImage.src = item.src
+
+      if (preloadImage.complete) {
+        apply()
+        return
+      }
+
+      preloadImage.addEventListener('load', apply, { once: true })
+      preloadImage.addEventListener('error', apply, { once: true })
+    }
+
+    function open(index: number, trigger?: HTMLButtonElement) {
+      render(index)
+      lastTrigger = trigger ?? null
+      previewRoot.hidden = false
+      previewRoot.setAttribute('aria-hidden', 'false')
+      document.documentElement.setAttribute('data-photo-preview-open', 'true')
+      window.requestAnimationFrame(() => {
+        previewRoot.setAttribute('data-open', 'true')
+      })
+    }
+
+    function close() {
+      previewRoot.setAttribute('data-open', 'false')
+      previewRoot.setAttribute('aria-hidden', 'true')
+      document.documentElement.removeAttribute('data-photo-preview-open')
+
+      window.setTimeout(() => {
+        if (previewRoot.getAttribute('data-open') === 'true') return
+        previewRoot.hidden = true
+        previewImage.removeAttribute('src')
+      }, 220)
+
+      if (lastTrigger?.isConnected) {
+        lastTrigger.focus()
+      }
+    }
+
+    function move(step: number) {
+      if (items.length <= 1 || currentIndex < 0) return
+      render(currentIndex + step)
+    }
+
+    triggers.forEach((trigger, index) => {
+      trigger.addEventListener('click', () => open(index, trigger), { signal })
+    })
+
+    previewCloseButton.addEventListener('click', close, { signal })
+    previewBackdrop.addEventListener('click', close, { signal })
+    previewPrevButton.addEventListener('click', () => move(-1), { signal })
+    previewNextButton.addEventListener('click', () => move(1), { signal })
+    previewRoot.addEventListener(
+      'click',
+      (event) => {
+        const target = event.target
+        if (!(target instanceof HTMLElement)) return
+        if (target.closest('[data-photo-preview-safe]')) return
+        close()
+      },
+      { signal },
+    )
+
+    document.addEventListener(
+      'keydown',
+      (event) => {
+        if (previewRoot.getAttribute('data-open') !== 'true') return
+
+        if (event.key === 'Escape') {
+          event.preventDefault()
+          close()
+          return
+        }
+
+        if (event.key === 'ArrowLeft') {
+          event.preventDefault()
+          move(-1)
+          return
+        }
+
+        if (event.key === 'ArrowRight') {
+          event.preventDefault()
+          move(1)
+        }
+      },
+      { signal },
+    )
+
+    previewWindow.__photoPreviewCleanup = () => {
+      controller.abort()
+      previewRoot.hidden = true
+      previewRoot.setAttribute('data-open', 'false')
+      previewRoot.setAttribute('aria-hidden', 'true')
+      previewImage.dataset.state = 'ready'
+      previewImage.removeAttribute('src')
+      document.documentElement.removeAttribute('data-photo-preview-open')
+    }
+  }
+
+  initPhotoPreview()
+  document.addEventListener('astro:page-load', initPhotoPreview)
+  document.addEventListener('astro:after-swap', initPhotoPreview)
+</script>

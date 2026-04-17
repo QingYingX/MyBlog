@@ -1,4 +1,4 @@
-import type { IconMap, SocialLink, Site } from '@/types'
+import type { Comments, IconMap, SocialLink, Site } from '@/types'
 
 // 这里集中放站点层面的可调配置。
 // 日常改博客标题、导航、分页、主题切换时，优先看这个文件。
@@ -19,6 +19,10 @@ export const NAV_LINKS: SocialLink[] = [
   {
     href: '/blog',
     label: '博客',
+  },
+  {
+    href: '/photos',
+    label: '照片墙',
   },
   {
     href: '/tags',
@@ -56,6 +60,21 @@ export const CURSOR = {
   enabled: true, // true: 显示跟随鼠标的小圆点；false: 完全关闭
   lag: 0.22, // 越小越柔和，越大越贴手，建议范围 0.12 ~ 0.35
 } as const
+
+// 评论系统配置。
+// `enabled` 是总开关；如果关掉，这一项会让整个站点完全不加载评论组件。
+// `defaultEnabled` 控制文章默认是否开启评论，可在单篇 frontmatter 里用 `comments: false` 覆盖。
+export const COMMENTS: Comments = {
+  enabled: true,
+  defaultEnabled: true,
+  provider: 'twikoo',
+  serverUrl: 'https://twikoo.099311.xyz',
+  scriptUrl:
+    'https://registry.npmmirror.com/twikoo/1.7.7/files/dist/twikoo.min.js', // Twikoo 前端脚本地址，可按需替换成你自己的 CDN
+  styleUrl: 'https://registry.npmmirror.com/twikoo/1.7.7/files/dist/twikoo.css', // Twikoo 样式地址；放进全局 head 后，Astro 切页回来也不会丢样式
+  lang: 'zh-CN',
+  lazyLoad: true,
+}
 
 // 社交字段名和图标的映射。
 // 作者 frontmatter 或社交链接里出现的名称，需要能在这里找到对应图标。
