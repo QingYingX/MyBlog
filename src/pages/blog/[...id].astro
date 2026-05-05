@@ -56,6 +56,8 @@ const combinedReadingTime =
   hasChildPosts && !isCurrentSubpost
     ? await getCombinedReadingTime(currentPostId)
     : null
+const hasUpdatedDate =
+  post.data.updated && post.data.updated.getTime() !== post.data.date.getTime()
 
 const tocSections = await getTOCSections(currentPostId)
 const commentsEnabled =
@@ -170,6 +172,14 @@ const commentsEnabled =
           >
             <span>{formatDate(post.data.date)}</span>
           </div>
+
+          {
+            hasUpdatedDate && (
+              <div class="flex w-full items-center justify-center gap-2 py-2 sm:w-fit sm:px-2 sm:py-0 first:sm:pl-0 last:sm:pr-0">
+                <span>更新于 {formatDate(post.data.updated!)}</span>
+              </div>
+            )
+          }
 
           <div
             class="flex w-full items-center justify-center gap-2 py-2 sm:w-fit sm:px-2 sm:py-0 first:sm:pl-0 last:sm:pr-0"

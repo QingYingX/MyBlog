@@ -8,13 +8,14 @@ Chinese personal blog built on Astro 6, evolved from `astro-erudite`. Static sit
 
 ## Commands
 
-Package manager: **npm** (lockfile is `package-lock.json`; `bun.lock` is also present but npm is canonical per README). Node 22+.
+Package manager: **Bun** (lockfile is `bun.lock`). Node 22+ is still compatible if npm commands are needed, but project docs and Docker use Bun.
 
-- `npm run dev` — dev server on port **39393** (configured in `astro.config.ts`, not the Astro default 4321).
-- `npm run build` — runs `astro check` (type check) then `astro build`. Use this to validate types.
-- `npm run preview` — preview built site.
-- `npm run start` — `astro preview --host 0.0.0.0` (used by the Docker image).
-- `npm run prettier` — format `.ts/.tsx/.css/.astro`.
+- `bun run dev` — dev server on port **39393** (configured in `astro.config.ts`, not the Astro default 4321).
+- `bun run build` — runs `astro check` (type check) then `astro build`. Use this to validate types.
+- `bun run preview` — preview built site.
+- `bun run start` — `astro preview --host 0.0.0.0`.
+- `bun run serve` — build then preview on `0.0.0.0` (used by the Docker image).
+- `bun run prettier` — format `.ts/.tsx/.css/.astro`.
 - Docker: `docker compose up -d --build` (also port 39393).
 
 No test suite is configured.
@@ -46,4 +47,4 @@ Content lives in `src/content/{blog,authors,projects}/`. Blog posts are folders 
 - Cursor dot and theme-toggle animation are tunable via `CURSOR` and `THEME_TOGGLE` in `src/config.ts`.
 
 ### Comments
-Twikoo integration. Styles are loaded from `COMMENTS.styleUrl` in the global `<head>` so they persist across client-side navigation. `COMMENTS.enabled` is the kill-switch; `defaultEnabled` sets the per-post default (override per-post with `comments: false` in frontmatter). The configured `serverUrl` points at a LAN Docker instance (`192.168.10.21:40063`) — expect this to be unreachable outside the author's network.
+Twikoo integration. Styles are loaded from `COMMENTS.styleUrl` in the global `<head>` so they persist across client-side navigation. `COMMENTS.enabled` is the kill-switch; `defaultEnabled` sets the per-post default (override per-post with `comments: false` in frontmatter). The configured `serverUrl` currently points at `https://twikoo.099311.xyz`.

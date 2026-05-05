@@ -1,4 +1,11 @@
-import type { Comments, IconMap, SocialLink, Site } from '@/types'
+import type {
+  Comments,
+  ContextMenu,
+  IconMap,
+  SocialLink,
+  Site,
+  ThemeToggle,
+} from '@/types'
 
 // 这里集中放站点层面的可调配置。
 // 日常改博客标题、导航、分页、主题切换时，优先看这个文件。
@@ -49,13 +56,19 @@ export const SOCIAL_LINKS: SocialLink[] = [
 // 主题切换动效配置。
 export const THEME_TOGGLE = {
   followPointer: false, // true: 动画收束点跟随鼠标；false: 始终锁定在按钮中心
-} as const
+  speed: 2, // 动效速度倍率；越大越快，越小越慢，推荐范围 0.5 ~ 2
+} as const satisfies ThemeToggle
 
 // 鼠标样式配置。
 export const CURSOR = {
   enabled: true, // true: 显示跟随鼠标的小圆点；false: 完全关闭
   lag: 0.22, // 越小越柔和，越大越贴手，建议范围 0.12 ~ 0.35
 } as const
+
+// 浏览器右键菜单配置。
+export const CONTEXT_MENU: ContextMenu = {
+  disabled: true, // true: 全站禁用右键菜单；false: 保持浏览器默认行为
+}
 
 // 评论系统配置。
 // `enabled` 是总开关；如果关掉，这一项会让整个站点完全不加载评论组件。

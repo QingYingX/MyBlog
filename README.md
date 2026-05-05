@@ -18,6 +18,7 @@
 - 集成 Expressive Code、Shiki 和 KaTeX，适合技术写作。
 - 自带深浅色主题切换和 Astro View Transitions 页面过渡。
 - 支持桌面端鼠标跟随小圆点效果，可在配置中一键开关。
+- 支持全站禁用浏览器右键菜单，可在配置中一键开关。
 - 内置 Twikoo 评论集成，支持懒加载、按文章关闭。
 - 自带照片墙页面，支持点击预览、键盘翻页与按图独立的评论抽屉；抽屉展开时预览区自动收窄且分级关闭。
 - 首页自动拉取 [一言](https://v1.hitokoto.cn) 并在客户端缓存一小时。
@@ -40,20 +41,21 @@
 
 ### 环境要求
 
-- Node.js 22 或更高版本，Docker 镜像使用的是 `node:22-alpine`。
-- npm，项目当前使用 `package-lock.json` 锁定依赖版本。
+- Bun 1.x。项目日常开发以 Bun 为准，并使用 `bun.lock` 锁定依赖版本。
+- Node.js 22 或更高版本也可以运行项目；如果不用 Bun，可以改用 npm 兼容命令。
+- Docker 镜像使用的是 `oven/bun:1-alpine`。
 - Docker 与 Docker Compose 可选，仅在容器化运行时需要。
 
 ### 1. 安装依赖
 
 ```bash
-npm install
+bun install
 ```
 
 ### 2. 启动开发服务器
 
 ```bash
-npm run dev
+bun run dev
 ```
 
 默认地址为 `http://localhost:39393`。开发端口由 `astro.config.ts` 中的 `server.port` 统一配置。
@@ -61,13 +63,13 @@ npm run dev
 ### 3. 构建生产版本
 
 ```bash
-npm run build
+bun run build
 ```
 
 ### 4. 本地预览构建结果
 
 ```bash
-npm run preview
+bun run preview
 ```
 
 ## Docker 运行
@@ -105,19 +107,19 @@ docker build -t myblog .
 docker run -d --name MyBlog -p 39393:39393 --restart unless-stopped myblog
 ```
 
-当前镜像启动命令为 `npm run serve`，会先执行 `npm run build`，再通过 `npm run start` 启动 Astro 预览服务。如果修改了源码、内容或配置，请重新构建镜像后再启动容器。
+当前镜像启动命令为 `bun run serve`，会先执行 `astro check` 和 `astro build`，再通过 `astro preview --host 0.0.0.0` 启动 Astro 预览服务。如果修改了源码、内容或配置，请重新构建镜像后再启动容器。
 
 ## 常用命令
 
 | 命令               | 说明                                                   |
 | ------------------ | ------------------------------------------------------ |
-| `npm run dev`      | 启动本地开发服务器，默认访问 `http://localhost:39393`  |
-| `npm run build`    | 先做类型检查，再构建静态站点                           |
-| `npm run preview`  | 本地预览构建后的站点                                   |
-| `npm run start`    | 以 `0.0.0.0` 监听方式启动 Astro 预览服务，适合容器环境 |
-| `npm run serve`    | 先构建再启动预览服务，Docker 默认执行这个命令          |
-| `npm run astro`    | 执行 Astro CLI                                         |
-| `npm run prettier` | 格式化 `ts`、`tsx`、`css`、`astro` 文件                |
+| `bun run dev`      | 启动本地开发服务器，默认访问 `http://localhost:39393`  |
+| `bun run build`    | 先做类型检查，再构建静态站点                           |
+| `bun run preview`  | 本地预览构建后的站点                                   |
+| `bun run start`    | 以 `0.0.0.0` 监听方式启动 Astro 预览服务，适合容器环境 |
+| `bun run serve`    | 先构建再启动预览服务，Docker 默认执行这个命令          |
+| `bun run astro`    | 执行 Astro CLI                                         |
+| `bun run prettier` | 格式化 `ts`、`tsx`、`css`、`astro` 文件                |
 
 ## 目录结构
 
@@ -149,6 +151,7 @@ docker run -d --name MyBlog -p 39393:39393 --restart unless-stopped myblog
 ├─ components.json          # UI 组件配置
 ├─ tsconfig.json            # TypeScript 配置
 ├─ CLAUDE.md                # 给 Claude Code 的项目说明
+├─ bun.lock                 # Bun 依赖锁定文件
 └─ package.json             # 脚本与依赖
 ```
 
@@ -164,8 +167,10 @@ docker run -d --name MyBlog -p 39393:39393 --restart unless-stopped myblog
 | `NAV_LINKS`                  | 顶部导航链接                                                 |
 | `SOCIAL_LINKS`               | 页脚和社交链接                                               |
 | `THEME_TOGGLE.followPointer` | 主题切换圆形动效是否跟随鼠标位置                             |
+| `THEME_TOGGLE.speed`         | 主题切换动效速度倍率，越大越快                               |
 | `CURSOR.enabled`             | 是否启用桌面端鼠标跟随小圆点                                 |
 | `CURSOR.lag`                 | 鼠标圆点的跟随阻尼，值越大越跟手                             |
+| `CONTEXT_MENU.disabled`      | 是否禁用浏览器右键菜单                                       |
 | `COMMENTS`                   | 评论系统（Twikoo）开关、服务地址、脚本/样式地址、懒加载      |
 | `ICON_MAP`                   | 社交字段名称和图标的映射关系                                 |
 
@@ -175,6 +180,23 @@ docker run -d --name MyBlog -p 39393:39393 --restart unless-stopped myblog
 export const CURSOR = {
   enabled: false,
   lag: 0.22,
+} as const
+```
+
+调整主题切换动效速度可以这样改：
+
+```ts
+export const THEME_TOGGLE = {
+  followPointer: false,
+  speed: 1.4,
+} as const
+```
+
+关闭全站右键菜单则可以这样改：
+
+```ts
+export const CONTEXT_MENU = {
+  disabled: true,
 } as const
 ```
 
@@ -219,6 +241,7 @@ src/content/blog/my-first-post/
 title: '我的第一篇文章'
 description: '这里是一段文章摘要。'
 date: 2026-04-13
+updated: 2026-04-20
 tags: ['astro', 'blog']
 image: './banner.png'
 authors: ['qingying']
@@ -228,17 +251,18 @@ draft: false
 
 当前博客内容 schema 支持以下字段：
 
-| 字段          | 类型       | 是否必填 | 说明               |
-| ------------- | ---------- | -------- | ------------------ |
-| `title`       | `string`   | 是       | 文章标题           |
-| `description` | `string`   | 是       | 文章摘要           |
-| `date`        | `date`     | 是       | 发布日期           |
-| `order`       | `number`   | 否       | 同一天的子文章排序 |
-| `image`       | `image`    | 否       | 文章封面           |
-| `tags`        | `string[]` | 否       | 标签列表           |
-| `authors`     | `string[]` | 否       | 作者 id 列表       |
+| 字段          | 类型       | 是否必填 | 说明                 |
+| ------------- | ---------- | -------- | -------------------- |
+| `title`       | `string`   | 是       | 文章标题             |
+| `description` | `string`   | 是       | 文章摘要             |
+| `date`        | `date`     | 是       | 发布日期             |
+| `updated`     | `date`     | 否       | 最后更新日期         |
+| `order`       | `number`   | 否       | 同一天的子文章排序   |
+| `image`       | `image`    | 否       | 文章封面             |
+| `tags`        | `string[]` | 否       | 标签列表             |
+| `authors`     | `string[]` | 否       | 作者 id 列表         |
 | `comments`    | `boolean`  | 否       | 覆盖该篇是否开启评论 |
-| `draft`       | `boolean`  | 否       | 是否草稿           |
+| `draft`       | `boolean`  | 否       | 是否草稿             |
 
 ### 子文章
 
@@ -336,7 +360,7 @@ src/content/projects/
 - `Dockerfile` 中的 `EXPOSE`
 - `docker-compose.yml` 中的 `ports`
 
-如果通过反向代理访问开发/预览服务（例如使用自己的域名访问 `npm run dev`），需要把域名加入 `astro.config.ts` 的 `server.allowedHosts`，否则会被 Vite 以 "Blocked request" 拒绝。
+如果通过反向代理访问开发/预览服务（例如使用自己的域名访问 `bun run dev`），需要把域名加入 `astro.config.ts` 的 `server.allowedHosts`，否则会被 Vite 以 "Blocked request" 拒绝。
 
 如果你准备部署到带子路径的站点，例如 `https://username.github.io/repo-name/` 这种 GitHub Pages 项目页，还需要额外检查 Astro 的 `base` 配置以及站内绝对路径资源是否匹配。
 

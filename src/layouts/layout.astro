@@ -7,7 +7,7 @@ import Footer from '@/components/footer.astro'
 import Head from '@/components/head.astro'
 import Header from '@/components/header.astro'
 import ViewportScrollbar from '@/components/viewport-scrollbar.astro'
-import { SITE } from '@/config'
+import { CONTEXT_MENU, SITE } from '@/config'
 import { cn } from '@/lib/utils'
 
 interface Props {
@@ -39,6 +39,28 @@ const { class: className } = Astro.props
     >
       <slot />
     </main>
+    {
+      CONTEXT_MENU.disabled && (
+        <script>
+          (() => {
+            type ContextMenuWindow = Window & {
+              __contextMenuDisabledInitialized?: boolean
+            }
+
+            const contextMenuWindow = window as ContextMenuWindow
+
+            if (contextMenuWindow.__contextMenuDisabledInitialized) return
+
+            const disableContextMenu = (event: MouseEvent) => {
+              event.preventDefault()
+            }
+
+            document.addEventListener('contextmenu', disableContextMenu)
+            contextMenuWindow.__contextMenuDisabledInitialized = true
+          })()
+        </script>
+      )
+    }
     <Cursor transition:persist />
     <Footer />
     <ViewportScrollbar transition:persist />

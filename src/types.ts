@@ -8,6 +8,15 @@ export type Site = {
   postsPerPage: number
 }
 
+export type ThemeToggle = {
+  followPointer: boolean
+  speed: number
+}
+
+export type ContextMenu = {
+  disabled: boolean
+}
+
 export type Comments = {
   enabled: boolean
   defaultEnabled: boolean

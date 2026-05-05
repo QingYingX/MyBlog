@@ -42,6 +42,18 @@ const author =
 <meta property="og:site_name" content={SITE.title} />
 <meta property="og:url" content={Astro.url} />
 <meta property="og:author" content={author} />
+<meta
+  property="article:published_time"
+  content={post.data.date.toISOString()}
+/>
+{
+  post.data.updated && (
+    <meta
+      property="article:modified_time"
+      content={post.data.updated.toISOString()}
+    />
+  )
+}
 
 <meta name="twitter:title" content={title} />
 <meta name="twitter:description" content={description} />
